@@ -1,7 +1,9 @@
+
+
 package com.example.mymedifetch
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -20,13 +22,18 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun LandingScreen(
     onNavigate: () -> Unit = {},
-    onNavigateToChooseAccountTypeScreen: () -> Unit = {}
+    onNavigateBack: () -> Unit = {} // default lambda for Preview
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color = Color(0xFFF4FBFA))
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+
+        // Background Image
+        Image(
+            painter = painterResource(id = R.drawable.medicals),
+            contentDescription = "Background Image",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -34,18 +41,32 @@ fun LandingScreen(
                 .align(Alignment.Center),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
+            // Back Button
+            Text(
+                text = "← Back",
+                modifier = Modifier
+                    .align(Alignment.Start)
+                    .clickable { onNavigateBack() }
+                    .padding(8.dp),
+                color = Color.Blue
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Logo Card
             Card(
                 shape = RoundedCornerShape(18.dp),
                 modifier = Modifier
                     .size(120.dp)
-                    .shadow(10.dp, RoundedCornerShape(18.dp)),
+                    .shadow(10.dp, RoundedCornerShape(18.dp))
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.fillMaxSize()
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.logo),
+                        painter = painterResource(id = R.drawable.medifetch1),
                         contentDescription = "App Logo",
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.size(64.dp)
@@ -62,7 +83,7 @@ fun LandingScreen(
 
             Text(
                 text = "Your Healthcare, Simplified",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(top = 6.dp),
                 color = Color(0xFF6F7B83)
             )
@@ -79,7 +100,7 @@ fun LandingScreen(
             Spacer(modifier = Modifier.height(28.dp))
 
             Button(
-                onClick = onNavigateToChooseAccountTypeScreen,
+                onClick = { onNavigate() },
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C7B76)),
                 modifier = Modifier
@@ -89,42 +110,15 @@ fun LandingScreen(
                 Text(
                     text = "GET STARTED",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF9AA7AB)
+                    color = Color(0xFFE2EAEC)
                 )
             }
         }
     }
 }
 
-@Preview(showBackground = true, widthDp = 360, heightDp = 640, name = "Light Mode")
+@Preview(showBackground = true, widthDp = 360, heightDp = 640)
 @Composable
-fun LandingScreenPreviewLight() {
-    MaterialTheme(colorScheme = lightColorScheme()) {
-        LandingScreen()
-    }
+fun LandingScreenPreview() {
+    LandingScreen()
 }
-
-//@Preview(showBackground = true, widthDp = 360, heightDp = 640, name = "Dark Mode")
-//@Composable
-//fun LandingScreenPreviewDark() {
-//    MaterialTheme(colorScheme = darkColorScheme()) {
-//        LandingScreen()
-//    }
-
-
-
-//@Composable
-//fun HomeScreen(onNavigate: () -> Unit = {}){
-//    Column {
-//        Text("This is Home Screen")
-//        Button(onClick = onNavigate){
-//            Text("Go to details")
-//        }
-//    }
-//}
-//@Preview(showBackground = true)
-//@Composable
-//fun PreviewHomeScreen(){
-//    HomeScreen ()
-//}
-
