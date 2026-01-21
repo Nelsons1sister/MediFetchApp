@@ -20,10 +20,4 @@ class AuthRepository {
     suspend fun login(email: String, password: String): Result<Unit> {
         return try {
             val provider = Email(email = email, password = password)
-            auth.signInWith(provider)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-}
+            auth.sig
