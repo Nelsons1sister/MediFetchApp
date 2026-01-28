@@ -21,7 +21,7 @@ import com.example.mymedifetch.R
 fun ChooseAccountTypeScreen(
     onNavigate: () -> Unit,
     onBack: () -> Unit = {}
-    ) {
+) {
 
     Box(
         modifier = Modifier
@@ -32,7 +32,7 @@ fun ChooseAccountTypeScreen(
         painter = painterResource(id = R.drawable.medicals),
         contentDescription = "Background Image",
         contentScale = ContentScale.Crop,
-        modifier =  Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     )
 
 

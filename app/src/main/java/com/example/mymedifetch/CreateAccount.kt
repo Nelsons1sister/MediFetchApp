@@ -14,15 +14,23 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.mymedifetch.auth.AuthRepository
+import kotlinx.coroutines.launch
 
 @Composable
 fun CreateAccountScreen(
     onNavigateBack: () -> Unit = {},
     onAccountCreated: () -> Unit = {},
 ) {
+    var email by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    val authRepository = remember { AuthRepository() }
+    val scope = rememberCoroutineScope()
+    var errorMessage by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -49,6 +57,15 @@ fun CreateAccountScreen(
             Text("Create Account", style = MaterialTheme.typography.titleLarge)
 
             Spacer(Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email Address") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = name,
@@ -78,14 +95,33 @@ fun CreateAccountScreen(
             Spacer(Modifier.height(20.dp))
 
             Button(
-                onClick = onAccountCreated,
+                onClick = {
+                    scope.launch {
+                        isLoading = true
+                        val result = authRepository.signUp(email, password)
+                        isLoading = false
+
+                        if (result.isSuccess) {
+                            onAccountCreated()
+                        } else {
+                            errorMessage = result.exceptionOrNull()?.message ?: "Signup Failed"
+                        }
+                    }
+                },
+                enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C7B76))
             ) {
-                Text("Create Account", color = Color.White)
+                if (isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Create Account", color = Color.White)
+                }
             }
 
-            Spacer(Modifier.height(16.dp))
+            if (errorMessage.isNotEmpty()) {
+                Text(text = errorMessage, color = Color.Red, modifier = Modifier.padding(top = 8.dp))
+            }
 
             Text(
                 "Back to Login",

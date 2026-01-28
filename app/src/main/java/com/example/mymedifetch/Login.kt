@@ -1,5 +1,6 @@
 package com.example.mymedifetch
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,6 +33,8 @@ fun LoginScreen(
 
     val authRepository = remember { AuthRepository() }
     val scope = rememberCoroutineScope()
+
+    Column (){  }
 
     Box(
         modifier = Modifier
