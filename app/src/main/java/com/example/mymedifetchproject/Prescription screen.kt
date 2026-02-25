@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,38 +23,47 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProviderPrescriptionScreen(
+    isDarkMode: Boolean, // ✅ Added theme support
     initialPatientId: String = "",
-    onBack: () -> Unit = {}, // Added for navigation
+    onBack: () -> Unit = {},
     onPrescriptionSent: () -> Unit = {}
 ) {
-    // --- 1. FORM STATES ---
+    // --- 1. THEME VARIABLES ---
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+    val primaryText = if (isDarkMode) Color.White else Color.Black
+    val secondaryText = if (isDarkMode) Color.Gray else Color.DarkGray
+    val containerBg = if (isDarkMode) Color(0xFF121212) else Color.White
+
+    // --- 2. FORM STATES ---
     var patientId by remember { mutableStateOf(initialPatientId) }
     var clinicalFindings by remember { mutableStateOf("") }
     var medicationList by remember { mutableStateOf("") }
     var additionalInstructions by remember { mutableStateOf("") }
 
-    // UI Feedback States
     var isSending by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    // Sync state if initialPatientId changes via NavGraph
     LaunchedEffect(initialPatientId) {
         if (initialPatientId.isNotEmpty()) {
             patientId = initialPatientId
         }
     }
 
-    // --- 2. SUCCESS CONFIRMATION DIALOG ---
+    // --- 3. SUCCESS CONFIRMATION DIALOG ---
     if (showSuccessDialog) {
         AlertDialog(
             onDismissRequest = { },
             icon = {
-                Icon(Icons.Default.TaskAlt, contentDescription = null, tint = Color(0xFF2C7B76), modifier = Modifier.size(48.dp))
+                Icon(Icons.Default.TaskAlt, contentDescription = null, tint = accentTeal, modifier = Modifier.size(48.dp))
             },
-            title = { Text("Case Finalized", fontWeight = FontWeight.Bold) },
+            title = { Text("Case Finalized", fontWeight = FontWeight.Bold, color = primaryText) },
             text = {
-                Text("Both the Medical Report and the Prescription have been sent to the patient. This case is now marked as Completed.")
+                Text(
+                    "Both the Medical Report and the Prescription have been sent to the patient. This case is now marked as Completed.",
+                    color = if (isDarkMode) Color.LightGray else Color.Black
+                )
             },
             confirmButton = {
                 Button(
@@ -61,159 +71,188 @@ fun ProviderPrescriptionScreen(
                         showSuccessDialog = false
                         onPrescriptionSent()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C7B76))
+                    colors = ButtonDefaults.buttonColors(containerColor = accentTeal)
                 ) {
-                    Text("Return to Dashboard")
+                    Text("Return to Dashboard", color = Color.White)
                 }
             },
             shape = RoundedCornerShape(16.dp),
-            containerColor = Color.White
+            containerColor = if (isDarkMode) Color(0xFF1E1E1E) else Color.White
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Write Prescription", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF8FBFB))
-                .padding(padding)
-                .padding(horizontal = 20.dp)
-                .verticalScroll(rememberScrollState())
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(bgColor)
+            .padding(top = 20.dp)
+            .padding(horizontal = 20.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        // --- HEADER ---
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Spacer(modifier = Modifier.height(10.dp))
-
+            IconButton(onClick = onBack, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = accentTeal)
+            }
+            Spacer(modifier = Modifier.width(12.dp))
             Text(
-                text = "Final Diagnosis & Rx",
-                fontSize = 24.sp,
+                text = "Write Prescription",
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF2C7B76)
+                color = primaryText
             )
-            Text(
-                text = "Interpret results and issue treatment",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- 3. PATIENT IDENTIFICATION ---
-            Text("Active Patient", fontWeight = FontWeight.Bold, color = Color.DarkGray)
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = patientId,
-                onValueChange = { patientId = it },
-                placeholder = { Text("Patient ID") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                leadingIcon = { Icon(Icons.Default.Badge, contentDescription = null) },
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = Color(0xFF2C7B76)
-                )
-            )
-
-            if (patientId.isNotEmpty()) {
-                Surface(
-                    modifier = Modifier.padding(top = 8.dp),
-                    color = Color(0xFFE0EDED),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = "Linking to Case ID: $patientId",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        color = Color(0xFF2C7B76),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(30.dp))
-
-            // --- 4. THE MEDICAL REPORT ---
-            Text("1. Clinical Findings / Medical Report", fontWeight = FontWeight.ExtraBold, color = Color.Black)
-            Text("Explain what the lab results mean", color = Color.Gray, fontSize = 12.sp)
-            Spacer(modifier = Modifier.height(10.dp))
-            OutlinedTextField(
-                value = clinicalFindings,
-                onValueChange = { clinicalFindings = it },
-                placeholder = { Text("E.g. Lab results confirm Malaria ++. Patient should begin treatment immediately.") },
-                modifier = Modifier.fillMaxWidth().height(120.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color.White)
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- 5. THE PRESCRIPTION ---
-            Text("2. Medication & Dosage", fontWeight = FontWeight.ExtraBold, color = Color.Black)
-            Text("List drugs and how they should be taken", color = Color.Gray, fontSize = 12.sp)
-            Spacer(modifier = Modifier.height(10.dp))
-            OutlinedTextField(
-                value = medicationList,
-                onValueChange = { medicationList = it },
-                placeholder = { Text("1. Lonart - 1 tab 12hrly for 3 days\n2. Paracetamol - 2 tabs 8hrly") },
-                modifier = Modifier.fillMaxWidth().height(100.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color.White)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = additionalInstructions,
-                onValueChange = { additionalInstructions = it },
-                label = { Text("Additional Advice (Rest, Diet, etc.)") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color.White)
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // --- 6. SUBMIT ACTION ---
-            Button(
-                onClick = {
-                    isSending = true
-                    scope.launch {
-                        delay(1500)
-                        isSending = false
-                        showSuccessDialog = true
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().height(58.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C7B76)),
-                enabled = patientId.isNotEmpty() && !isSending
-            ) {
-                if (isSending) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                } else {
-                    Icon(Icons.Default.FileUpload, contentDescription = null)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text("Deliver Report & Rx", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                }
-            }
-            Spacer(modifier = Modifier.height(40.dp))
         }
+
+        // --- SUB-HEADER ---
+        Text(
+            text = "Final Diagnosis & Rx",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = accentTeal
+        )
+        Text(
+            text = "Interpret results and issue treatment",
+            fontSize = 13.sp,
+            color = Color.Gray
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // --- PATIENT IDENTIFICATION ---
+        Text("Active Patient", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = secondaryText)
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = patientId,
+            onValueChange = { patientId = it },
+            placeholder = { Text("Enter Patient ID") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            leadingIcon = { Icon(Icons.Default.Badge, contentDescription = null, tint = accentTeal) },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = accentTeal,
+                unfocusedContainerColor = containerBg,
+                focusedContainerColor = containerBg,
+                focusedTextColor = primaryText,
+                unfocusedTextColor = primaryText
+            )
+        )
+
+        if (patientId.isNotEmpty()) {
+            Surface(
+                modifier = Modifier.padding(top = 8.dp),
+                color = accentTeal.copy(alpha = 0.15f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = "Linking to Case ID: $patientId",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    color = accentTeal,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // --- THE MEDICAL REPORT ---
+        Text("1. Clinical Findings", fontWeight = FontWeight.Bold, color = primaryText, fontSize = 15.sp)
+        Text("Explain the lab results clearly", color = Color.Gray, fontSize = 12.sp)
+        Spacer(modifier = Modifier.height(10.dp))
+        OutlinedTextField(
+            value = clinicalFindings,
+            onValueChange = { clinicalFindings = it },
+            placeholder = { Text("E.g. Malaria detected. Begin treatment.") },
+            modifier = Modifier.fillMaxWidth().height(100.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = containerBg,
+                focusedContainerColor = containerBg,
+                focusedBorderColor = accentTeal,
+                focusedTextColor = primaryText,
+                unfocusedTextColor = primaryText
+            )
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // --- THE PRESCRIPTION ---
+        Text("2. Medication & Dosage", fontWeight = FontWeight.Bold, color = primaryText, fontSize = 15.sp)
+        Text("List drugs and instructions", color = Color.Gray, fontSize = 12.sp)
+        Spacer(modifier = Modifier.height(10.dp))
+        OutlinedTextField(
+            value = medicationList,
+            onValueChange = { medicationList = it },
+            placeholder = { Text("1. Drug A - 1 tab 2x daily") },
+            modifier = Modifier.fillMaxWidth().height(100.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = containerBg,
+                focusedContainerColor = containerBg,
+                focusedBorderColor = accentTeal,
+                focusedTextColor = primaryText,
+                unfocusedTextColor = primaryText
+            )
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = additionalInstructions,
+            onValueChange = { additionalInstructions = it },
+            label = { Text("Additional Advice") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = containerBg,
+                focusedContainerColor = containerBg,
+                focusedBorderColor = accentTeal,
+                focusedTextColor = primaryText,
+                unfocusedTextColor = primaryText
+            )
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // --- SUBMIT ACTION ---
+        Button(
+            onClick = {
+                isSending = true
+                scope.launch {
+                    delay(1500)
+                    isSending = false
+                    showSuccessDialog = true
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = accentTeal),
+            enabled = patientId.isNotEmpty() && !isSending
+        ) {
+            if (isSending) {
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+            } else {
+                Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(10.dp))
+                Text("Deliver Report & Rx", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
+        }
+        Spacer(modifier = Modifier.height(40.dp))
     }
 }
 
-// --- PREVIEW ---
-@Preview(showBackground = true, showSystemUi = true)
+// --- PREVIEWS ---
+@Preview(name = "Prescription Light Mode", showBackground = true, showSystemUi = true)
 @Composable
-fun ProviderPrescriptionPreview() {
-    // Simulating a patient ID coming from the Lab Reports screen
-    ProviderPrescriptionScreen(initialPatientId = "P-102938")
+fun ProviderPrescriptionLightPreview() {
+    ProviderPrescriptionScreen(isDarkMode = false, initialPatientId = "P-102938")
+}
+
+@Preview(name = "Prescription Dark Mode", showBackground = true, showSystemUi = true)
+@Composable
+fun ProviderPrescriptionDarkPreview() {
+    ProviderPrescriptionScreen(isDarkMode = true, initialPatientId = "P-102938")
 }

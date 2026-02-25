@@ -26,9 +26,18 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun PatientRegisterScreen(
-    onAccountCreated: () -> Unit = {}, // Used for both registration success and "Already have account"
-    onBack: () -> Unit = {}           // Returns to ChooseAccountTypeScreen
+    isDarkMode: Boolean = false,      // ✅ Added theme support
+    onAccountCreated: () -> Unit = {},
+    onBack: () -> Unit = {}
 ) {
+    // --- 1. DYNAMIC THEME VARIABLES ---
+    val bgColor = if (isDarkMode) Color(0xFF121212) else Color(0xFFE5E5E5)
+    val formBg = if (isDarkMode) Color(0xFF1E1E1E) else Color.White
+    val primaryText = if (isDarkMode) Color.White else Color.Black
+    val secondaryText = if (isDarkMode) Color.LightGray else Color.Gray
+    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+    val fieldContainer = if (isDarkMode) Color(0xFF2C2C2C) else Color.Transparent
+
     // --- State Management ---
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -41,7 +50,7 @@ fun PatientRegisterScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFE5E5E5))
+            .background(bgColor) // ✅ Adaptive Background
     ) {
         // --- Back Button (Top Left) ---
         IconButton(
@@ -49,9 +58,12 @@ fun PatientRegisterScreen(
             modifier = Modifier
                 .padding(top = 40.dp, start = 16.dp)
                 .align(Alignment.TopStart)
-                .background(Color.White.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                .background(
+                    if (isDarkMode) Color.White.copy(alpha = 0.1f) else Color.White.copy(alpha = 0.5f),
+                    RoundedCornerShape(12.dp)
+                )
         ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF2C7B76))
+            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = accentTeal)
         }
 
         // 1. Logo Section
@@ -68,14 +80,14 @@ fun PatientRegisterScreen(
             )
         }
 
-        // 2. Form Section (White Card)
+        // 2. Form Section (Adaptive Card)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.72f)
                 .align(Alignment.BottomCenter)
                 .background(
-                    color = Color.White,
+                    color = formBg, // ✅ Adaptive Card Background
                     shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp)
                 )
                 .padding(32.dp)
@@ -85,15 +97,27 @@ fun PatientRegisterScreen(
                 text = "Patient Registration",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF2C7B76)
+                color = accentTeal
             )
             Text(
                 text = "Create your personal health account",
-                color = Color.Gray,
+                color = secondaryText,
                 fontSize = 14.sp
             )
 
             Spacer(modifier = Modifier.height(24.dp))
+
+            // --- Common Field Colors Helper ---
+            val textFieldColors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = primaryText,
+                unfocusedTextColor = primaryText,
+                focusedContainerColor = fieldContainer,
+                unfocusedContainerColor = fieldContainer,
+                focusedBorderColor = accentTeal,
+                unfocusedBorderColor = secondaryText,
+                focusedLabelColor = accentTeal,
+                unfocusedLabelColor = secondaryText
+            )
 
             // --- Input Fields ---
             OutlinedTextField(
@@ -102,7 +126,8 @@ fun PatientRegisterScreen(
                 label = { Text("Full Name") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                singleLine = true
+                singleLine = true,
+                colors = textFieldColors
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -113,7 +138,8 @@ fun PatientRegisterScreen(
                 label = { Text("Personal Email") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                singleLine = true
+                singleLine = true,
+                colors = textFieldColors
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -124,7 +150,8 @@ fun PatientRegisterScreen(
                 label = { Text("Phone Number") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                singleLine = true
+                singleLine = true,
+                colors = textFieldColors
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -142,10 +169,11 @@ fun PatientRegisterScreen(
                         Icon(
                             imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                             contentDescription = "Toggle Visibility",
-                            tint = Color(0xFF2C7B76)
+                            tint = accentTeal
                         )
                     }
-                }
+                },
+                colors = textFieldColors
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -157,7 +185,7 @@ fun PatientRegisterScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C7B76))
+                colors = ButtonDefaults.buttonColors(containerColor = accentTeal)
             ) {
                 Text(
                     text = "REGISTER",
@@ -169,14 +197,14 @@ fun PatientRegisterScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- LOGIN REDIRECT (Improved UX) ---
+            // --- LOGIN REDIRECT ---
             TextButton(
                 onClick = onAccountCreated,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Already have an account? ", color = Color.Gray, fontSize = 14.sp)
-                    Text("Log In", color = Color(0xFF2C7B76), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("Already have an account? ", color = secondaryText, fontSize = 14.sp)
+                    Text("Log In", color = accentTeal, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
             }
 
@@ -185,8 +213,14 @@ fun PatientRegisterScreen(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(name = "Dark Mode", showBackground = true, showSystemUi = true)
 @Composable
-fun PatientRegisterPreview() {
-    PatientRegisterScreen()
+fun PatientRegisterDarkPreview() {
+    PatientRegisterScreen(isDarkMode = true)
+}
+
+@Preview(name = "Light Mode", showBackground = true, showSystemUi = true)
+@Composable
+fun PatientRegisterLightPreview() {
+    PatientRegisterScreen(isDarkMode = false)
 }

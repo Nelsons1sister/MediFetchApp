@@ -1,5 +1,6 @@
 package com.example.mymedifetchproject.provider
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,21 +18,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 
-/**
- * ProviderPatientDetailScreen
- * Logic: Doctor reviews sickness report and triggers the lab request.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProviderPatientDetailScreen(
     patientId: String = "MF-2026-001",
+    isDarkMode: Boolean,              // ✅ Added global state
     onBack: () -> Unit,
     onOrderLab: () -> Unit
 ) {
     var showSuccessDialog by remember { mutableStateOf(false) }
 
-    // --- 1. SUCCESS DIALOG ---
+    // --- 1. DYNAMIC PALETTE ---
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
+    val primaryText = if (isDarkMode) Color.White else Color.Black
+    val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color.Gray
+    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+
+    // --- 2. SUCCESS DIALOG ---
     if (showSuccessDialog) {
         AlertDialog(
             onDismissRequest = { showSuccessDialog = false },
@@ -39,7 +45,7 @@ fun ProviderPatientDetailScreen(
                 Icon(
                     Icons.Default.CheckCircle,
                     contentDescription = null,
-                    tint = Color(0xFF2C7B76),
+                    tint = accentTeal,
                     modifier = Modifier.size(40.dp)
                 )
             },
@@ -50,13 +56,15 @@ fun ProviderPatientDetailScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showSuccessDialog = false
-                    onOrderLab() // Logic: Triggers the return to Dashboard
+                    onOrderLab()
                 }) {
-                    Text("OK", color = Color(0xFF2C7B76), fontWeight = FontWeight.Bold)
+                    Text("OK", color = accentTeal, fontWeight = FontWeight.Bold)
                 }
             },
             shape = RoundedCornerShape(16.dp),
-            containerColor = Color.White
+            containerColor = cardBg,
+            titleContentColor = primaryText,
+            textContentColor = secondaryText
         )
     }
 
@@ -69,55 +77,60 @@ fun ProviderPatientDetailScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = bgColor,
+                    titleContentColor = primaryText,
+                    navigationIconContentColor = primaryText
+                )
             )
         }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF8FBFB))
+                .background(bgColor)
                 .padding(padding)
                 .padding(horizontal = 20.dp)
                 .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(10.dp))
 
-            // --- 2. PATIENT INFO SECTION ---
+            // --- 3. PATIENT IDENTITY CARD ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = cardBg),
                 shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.cardElevation(2.dp)
+                elevation = CardDefaults.cardElevation(if (isDarkMode) 0.dp else 2.dp),
+                border = if (isDarkMode) BorderStroke(1.dp, Color(0xFF222222)) else null
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
                             shape = CircleShape,
-                            color = Color(0xFFE0EDED),
+                            color = accentTeal.copy(alpha = 0.15f),
                             modifier = Modifier.size(50.dp)
                         ) {
                             Icon(
                                 Icons.Default.Person,
                                 contentDescription = null,
-                                tint = Color(0xFF2C7B76),
+                                tint = accentTeal,
                                 modifier = Modifier.padding(10.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(15.dp))
                         Column {
-                            Text("David John", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
-                            Text("ID: $patientId", color = Color.Gray, fontSize = 14.sp)
+                            Text("David John", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = primaryText)
+                            Text("ID: $patientId", color = secondaryText, fontSize = 14.sp)
                         }
                         Spacer(modifier = Modifier.weight(1f))
                         Surface(
-                            color = Color(0xFFFFF3E0),
+                            color = if (isDarkMode) Color(0xFF3E2723) else Color(0xFFFFF3E0),
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
                                 "URGENT",
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                color = Color(0xFFE65100),
+                                color = if (isDarkMode) Color(0xFFFFAB91) else Color(0xFFE65100),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -128,50 +141,50 @@ fun ProviderPatientDetailScreen(
 
             Spacer(modifier = Modifier.height(25.dp))
 
-            // --- 3. SYMPTOMS SECTION ---
-            Text("Patient's Statement", fontWeight = FontWeight.Bold, color = Color.DarkGray)
+            // --- 4. SYMPTOMS SECTION ---
+            Text("Patient's Statement", fontWeight = FontWeight.Bold, color = accentTeal)
             Spacer(modifier = Modifier.height(10.dp))
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = Color.White,
+                color = cardBg,
                 shape = RoundedCornerShape(16.dp),
-                border = CardDefaults.outlinedCardBorder()
+                border = BorderStroke(1.dp, if (isDarkMode) Color(0xFF222222) else Color(0xFFE0E0E0))
             ) {
                 Text(
                     text = "High fever starting at midnight. Terrible body aches and sensitivity to light. I feel extremely dehydrated despite drinking water.",
                     modifier = Modifier.padding(16.dp),
+                    color = primaryText,
                     style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp)
                 )
             }
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            // --- 4. ACTION BUTTONS ---
-            Text("Provider Actions", fontWeight = FontWeight.Bold, color = Color.DarkGray)
+            // --- 5. ACTION BUTTONS ---
+            Text("Provider Actions", fontWeight = FontWeight.Bold, color = secondaryText)
             Spacer(modifier = Modifier.height(15.dp))
 
-            // ✅ PRIMARY ACTION: REQUEST LAB TEST
             Button(
                 onClick = { showSuccessDialog = true },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C7B76))
+                colors = ButtonDefaults.buttonColors(containerColor = accentTeal)
             ) {
-                Icon(Icons.Default.Science, contentDescription = null)
+                Icon(Icons.Default.Science, contentDescription = null, tint = Color.White)
                 Spacer(modifier = Modifier.width(10.dp))
-                Text("Request Lab Test", fontWeight = FontWeight.Bold)
+                Text("Request Lab Test", fontWeight = FontWeight.Bold, color = Color.White)
             }
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // --- 5. LOGIC EXPLANATION FOOTER ---
+            // --- 6. FOOTER INFO ---
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.HelpOutline, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.HelpOutline, contentDescription = null, tint = secondaryText, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     "Requesting a lab test moves this case to 'Pending Lab' status.",
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = secondaryText
                 )
             }
             Spacer(modifier = Modifier.height(20.dp))
@@ -179,13 +192,16 @@ fun ProviderPatientDetailScreen(
     }
 }
 
-// --- PREVIEW SECTION ---
-@Preview(showBackground = true, name = "Patient Detail View")
+// --- DUAL PREVIEWS ---
+
+@Preview(name = "Light Mode", showBackground = true)
 @Composable
-fun ProviderPatientDetailPreview() {
-    ProviderPatientDetailScreen(
-        patientId = "MF-2026-001",
-        onBack = {},
-        onOrderLab = {}
-    )
+fun ProviderDetailLightPreview() {
+    ProviderPatientDetailScreen(isDarkMode = false, onBack = {}, onOrderLab = {})
+}
+
+@Preview(name = "Dark Mode", showBackground = true)
+@Composable
+fun ProviderDetailDarkPreview() {
+    ProviderPatientDetailScreen(isDarkMode = true, onBack = {}, onOrderLab = {})
 }

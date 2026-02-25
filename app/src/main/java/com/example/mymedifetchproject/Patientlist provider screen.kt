@@ -1,5 +1,6 @@
 package com.example.mymedifetchproject.provider
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,8 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 
-// 1. Data model for the Provider's view of a patient
 data class ProviderPatient(
     val name: String,
     val id: String,
@@ -30,11 +31,19 @@ data class ProviderPatient(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProviderPatientListScreen(onPatientClick: (String) -> Unit) {
-    // State for searching
+fun ProviderPatientListScreen(
+    isDarkMode: Boolean, // ✅ Added global state
+    onPatientClick: (String) -> Unit
+) {
+    // --- 1. DYNAMIC PALETTE ---
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
+    val primaryText = if (isDarkMode) Color.White else Color.Black
+    val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color.Gray
+    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+
     var searchQuery by remember { mutableStateOf("") }
 
-    // Mock Data List
     val allPatients = remember {
         listOf(
             ProviderPatient("David John", "MF-2026-001", "2 hours ago", "Awaiting Lab", true),
@@ -45,7 +54,6 @@ fun ProviderPatientListScreen(onPatientClick: (String) -> Unit) {
         )
     }
 
-    // Filtered List Logic
     val filteredPatients = allPatients.filter {
         it.name.contains(searchQuery, ignoreCase = true) || it.id.contains(searchQuery, ignoreCase = true)
     }
@@ -53,11 +61,11 @@ fun ProviderPatientListScreen(onPatientClick: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8FBFB))
+            .background(bgColor)
             .padding(20.dp)
     ) {
-        Text("Facility Patients", fontSize = 26.sp, fontWeight = FontWeight.Bold)
-        Text("Manage active cases and reviews", color = Color.Gray, fontSize = 14.sp)
+        Text("Facility Patients", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = primaryText)
+        Text("Manage active cases and reviews", color = secondaryText, fontSize = 14.sp)
 
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -67,23 +75,26 @@ fun ProviderPatientListScreen(onPatientClick: (String) -> Unit) {
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Search ID or Name", fontSize = 14.sp) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                placeholder = { Text("Search ID or Name", fontSize = 14.sp, color = secondaryText) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = accentTeal) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = Color.White,
-                    focusedContainerColor = Color.White
+                    unfocusedContainerColor = cardBg,
+                    focusedContainerColor = cardBg,
+                    unfocusedBorderColor = if (isDarkMode) Color(0xFF222222) else Color.Transparent,
+                    focusedTextColor = primaryText,
+                    unfocusedTextColor = primaryText
                 ),
                 singleLine = true
             )
             Spacer(modifier = Modifier.width(12.dp))
             IconButton(
-                onClick = { /* Could open a bottom sheet filter */ },
+                onClick = { /* Open Filter */ },
                 modifier = Modifier
                     .size(52.dp)
-                    .background(Color.White, RoundedCornerShape(12.dp))
+                    .background(cardBg, RoundedCornerShape(12.dp))
             ) {
-                Icon(Icons.Default.FilterList, contentDescription = "Filter", tint = Color(0xFF2C7B76))
+                Icon(Icons.Default.FilterList, contentDescription = "Filter", tint = accentTeal)
             }
         }
 
@@ -95,14 +106,21 @@ fun ProviderPatientListScreen(onPatientClick: (String) -> Unit) {
             modifier = Modifier.fillMaxSize()
         ) {
             items(filteredPatients) { patient ->
-                PatientListItem(patient, onPatientClick)
+                PatientListItem(
+                    patient = patient,
+                    isDarkMode = isDarkMode,
+                    cardBg = cardBg,
+                    primaryText = primaryText,
+                    secondaryText = secondaryText,
+                    accentTeal = accentTeal,
+                    onClick = onPatientClick
+                )
             }
 
-            // Empty State
             if (filteredPatients.isEmpty()) {
                 item {
                     Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No patients found matching '$searchQuery'", color = Color.Gray)
+                        Text("No patients found", color = secondaryText)
                     }
                 }
             }
@@ -112,13 +130,22 @@ fun ProviderPatientListScreen(onPatientClick: (String) -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PatientListItem(patient: ProviderPatient, onClick: (String) -> Unit) {
+fun PatientListItem(
+    patient: ProviderPatient,
+    isDarkMode: Boolean,
+    cardBg: Color,
+    primaryText: Color,
+    secondaryText: Color,
+    accentTeal: Color,
+    onClick: (String) -> Unit
+) {
     Card(
-        onClick = { onClick(patient.id) }, // Navigates using the unique ID
+        onClick = { onClick(patient.id) },
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(1.dp)
+        colors = CardDefaults.cardColors(containerColor = cardBg),
+        elevation = CardDefaults.cardElevation(if (isDarkMode) 0.dp else 1.dp),
+        border = if (isDarkMode) BorderStroke(1.dp, Color(0xFF222222)) else null
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -128,13 +155,13 @@ fun PatientListItem(patient: ProviderPatient, onClick: (String) -> Unit) {
             Box(
                 modifier = Modifier
                     .size(45.dp)
-                    .background(Color(0xFFE0EDED), CircleShape),
+                    .background(accentTeal.copy(alpha = 0.15f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 val initials = patient.name.split(" ").map { it.take(1) }.joinToString("")
                 Text(
                     text = initials,
-                    color = Color(0xFF2C7B76),
+                    color = accentTeal,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -142,28 +169,36 @@ fun PatientListItem(patient: ProviderPatient, onClick: (String) -> Unit) {
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(patient.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(patient.id, color = Color.Gray, fontSize = 12.sp)
+                Text(patient.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = primaryText)
+                Text(patient.id, color = secondaryText, fontSize = 12.sp)
             }
 
             Column(horizontalAlignment = Alignment.End) {
                 if (patient.isUrgent) {
-                    Text("URGENT", color = Color.Red, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("URGENT", color = Color(0xFFFF5252), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
                 }
                 Text(
                     text = patient.status,
-                    color = Color(0xFF2C7B76),
+                    color = accentTeal,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )
-                Text(patient.lastUpdate, color = Color.LightGray, fontSize = 10.sp)
+                Text(patient.lastUpdate, color = secondaryText.copy(alpha = 0.7f), fontSize = 10.sp)
             }
         }
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+// --- 3. DUAL PREVIEWS ---
+
+@Preview(name = "Light Mode", showBackground = true)
 @Composable
-fun ProviderPatientListPreview() {
-    ProviderPatientListScreen(onPatientClick = {})
+fun ProviderPatientListLightPreview() {
+    ProviderPatientListScreen(isDarkMode = false, onPatientClick = {})
+}
+
+@Preview(name = "Dark Mode", showBackground = true)
+@Composable
+fun ProviderPatientListDarkPreview() {
+    ProviderPatientListScreen(isDarkMode = true, onPatientClick = {})
 }

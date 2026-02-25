@@ -29,10 +29,19 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun ProviderRegisterScreen(
     role: String?,
+    isDarkMode: Boolean = false,
     onAccountCreated: () -> Unit = {},
     onBack: () -> Unit = {},
 ) {
-    // --- State Management ---
+    // --- 1. DYNAMIC THEME VARIABLES ---
+    val bgColor = if (isDarkMode) Color(0xFF121212) else Color(0xFFE5E5E5)
+    val formBg = if (isDarkMode) Color(0xFF1E1E1E) else Color.White
+    val primaryText = if (isDarkMode) Color.White else Color.Black
+    val secondaryText = if (isDarkMode) Color.LightGray else Color.Gray
+    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+    val fieldContainer = if (isDarkMode) Color(0xFF2C2C2C) else Color.Transparent
+
+    // --- 2. STATE MANAGEMENT ---
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var licenseNumber by remember { mutableStateOf("") }
@@ -45,20 +54,23 @@ fun ProviderRegisterScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFE5E5E5))
+            .background(bgColor)
     ) {
-        // --- Back Button (For Role Correction) ---
+        // --- Back Button ---
         IconButton(
             onClick = onBack,
             modifier = Modifier
                 .padding(top = 40.dp, start = 16.dp)
                 .align(Alignment.TopStart)
-                .background(Color.White.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                .background(
+                    if (isDarkMode) Color.White.copy(alpha = 0.1f) else Color.White.copy(alpha = 0.5f),
+                    RoundedCornerShape(12.dp)
+                )
         ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF2C7B76))
+            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = accentTeal)
         }
 
-        // 1. Top Logo Section
+        // --- Logo Section ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -73,14 +85,14 @@ fun ProviderRegisterScreen(
             )
         }
 
-        // 2. Bottom Form Section
+        // --- Form Section ---
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.72f)
                 .align(Alignment.BottomCenter)
                 .background(
-                    Color.White,
+                    formBg,
                     shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp)
                 )
                 .padding(horizontal = 32.dp, vertical = 32.dp)
@@ -90,29 +102,40 @@ fun ProviderRegisterScreen(
                 text = "Provider Registration",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF2C7B76)
+                color = accentTeal
             )
 
             Text(
                 text = "Register your professional medical facility",
                 fontSize = 14.sp,
-                color = Color.Gray,
+                color = secondaryText,
                 modifier = Modifier.padding(top = 4.dp)
             )
 
-            // --- Updated Navigation Row ---
             Row(modifier = Modifier.padding(top = 12.dp)) {
-                Text(text = "Already have an account? ", color = Color.Gray, fontSize = 14.sp)
+                Text(text = "Already have an account? ", color = secondaryText, fontSize = 14.sp)
                 Text(
                     text = "Login",
-                    color = Color(0xFF2C7B76),
+                    color = accentTeal,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    modifier = Modifier.clickable { onAccountCreated() } // ✅ Correctly routes to Login
+                    modifier = Modifier.clickable { onAccountCreated() }
                 )
             }
 
             Spacer(modifier = Modifier.height(28.dp))
+
+            // --- Shared Field Configuration ---
+            val textFieldColors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = primaryText,
+                unfocusedTextColor = primaryText,
+                focusedContainerColor = fieldContainer,
+                unfocusedContainerColor = fieldContainer,
+                focusedBorderColor = accentTeal,
+                unfocusedBorderColor = secondaryText,
+                focusedLabelColor = accentTeal,
+                unfocusedLabelColor = secondaryText
+            )
 
             // --- Fields ---
             OutlinedTextField(
@@ -121,7 +144,8 @@ fun ProviderRegisterScreen(
                 label = { Text("Facility / Practice Name") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                singleLine = true
+                singleLine = true,
+                colors = textFieldColors
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -132,7 +156,8 @@ fun ProviderRegisterScreen(
                 label = { Text("Work Email Address") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                singleLine = true
+                singleLine = true,
+                colors = textFieldColors
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -143,7 +168,8 @@ fun ProviderRegisterScreen(
                 label = { Text("Medical License Number") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                singleLine = true
+                singleLine = true,
+                colors = textFieldColors
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -154,7 +180,8 @@ fun ProviderRegisterScreen(
                 label = { Text("Contact Phone Number") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                singleLine = true
+                singleLine = true,
+                colors = textFieldColors
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -172,10 +199,11 @@ fun ProviderRegisterScreen(
                         Icon(
                             imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                             contentDescription = "Toggle Visibility",
-                            tint = Color(0xFF2C7B76)
+                            tint = accentTeal
                         )
                     }
-                }
+                },
+                colors = textFieldColors
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -187,10 +215,15 @@ fun ProviderRegisterScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C7B76)),
+                colors = ButtonDefaults.buttonColors(containerColor = accentTeal),
                 enabled = email.isNotEmpty() && password.isNotEmpty() && name.isNotEmpty()
             ) {
-                Text("REGISTER FACILITY", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "REGISTER FACILITY",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
             }
 
             Spacer(modifier = Modifier.height(40.dp))
@@ -198,9 +231,16 @@ fun ProviderRegisterScreen(
     }
 }
 
-// --- Preview Section ---
-@Preview(showBackground = true, showSystemUi = true)
+// --- 3. PREVIEWS ---
+
+@Preview(name = "Light Mode", showBackground = true, showSystemUi = true)
 @Composable
-fun ProviderRegisterPreview() {
-    ProviderRegisterScreen(role = "provider")
+fun ProviderRegisterLightPreview() {
+    ProviderRegisterScreen(role = "provider", isDarkMode = false)
+}
+
+@Preview(name = "Dark Mode", showBackground = true, showSystemUi = true)
+@Composable
+fun ProviderRegisterDarkPreview() {
+    ProviderRegisterScreen(role = "provider", isDarkMode = true)
 }

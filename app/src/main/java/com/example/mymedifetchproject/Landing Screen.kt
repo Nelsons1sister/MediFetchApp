@@ -1,10 +1,7 @@
 package com.example.mymedifetchproject
 
-
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -25,7 +22,6 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun LandingScreen(
     onNavigate: () -> Unit = {},
-    onNavigateBack: () -> Unit = {}
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -37,14 +33,18 @@ fun LandingScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // 2. Dark Overlay (Gradient) - This makes the text "pop"
+        // 2. Stronger Gradient Overlay for better text contrast
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f)),
-                        startY = 300f
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.5f),
+                            Color.Black.copy(alpha = 0.95f) // Darker bottom
+                        ),
+                        startY = 450f
                     )
                 )
         )
@@ -52,87 +52,88 @@ fun LandingScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(28.dp),
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Bottom
         ) {
 
-            // Logo Card
+            // 3. Branding Icon
             Card(
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                modifier = Modifier
-                    .size(100.dp)
-                    .shadow(12.dp, RoundedCornerShape(24.dp))
+                modifier = Modifier.size(90.dp)
             ) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                     Image(
                         painter = painterResource(id = R.drawable.medical),
                         contentDescription = "Logo",
-                        modifier = Modifier.size(60.dp)
+                        modifier = Modifier.size(50.dp)
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Text Section
+            // 4. Headline
             Text(
                 text = "MediFetch",
-                style = MaterialTheme.typography.headlineLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    letterSpacing = 2.sp
-                )
+                fontSize = 36.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White,
+                letterSpacing = 1.sp
             )
 
+            // 5. Sub-headline
             Text(
-                text = "Your Healthcare, Simplified",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color(0xFFB0BEC5)
+                text = "Smart Diagnostics. Faster Recovery.",
+                fontSize = 18.sp,
+                color = Color(0xFF4DB6AC),
+                fontWeight = FontWeight.Bold // Bolded for clarity
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
+            // 6. Value Proposition - UPDATED: Bold & Solid White for high legibility
             Text(
-                text = "Connect with hospitals, labs, and pharmacies. Access your medical records anytime, anywhere.",
-                style = MaterialTheme.typography.bodyMedium,
+                text = "Report your symptoms, get lab-tested, and receive expert prescriptions—all in one place.",
+                fontSize = 17.sp, // Slightly larger
                 textAlign = TextAlign.Center,
-                color = Color.White.copy(alpha = 0.8f),
-                modifier = Modifier.padding(horizontal = 20.dp)
+                color = Color.White, // Solid white (no transparency)
+                fontWeight = FontWeight.Bold, // Extra emphasis
+                lineHeight = 24.sp,
+                modifier = Modifier.padding(horizontal = 12.dp)
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(44.dp))
 
-            // Get Started Button
+            // 7. Get Started Button
             Button(
                 onClick = { onNavigate() },
-                shape = RoundedCornerShape(50), // Fully rounded
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C7B76)),
                 modifier = Modifier
-                    .height(56.dp)
-                    .fillMaxWidth(0.7f)
+                    .fillMaxWidth()
+                    .height(58.dp)
+                    .shadow(8.dp, RoundedCornerShape(12.dp))
             ) {
                 Text(
                     text = "GET STARTED",
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White,
+                    letterSpacing = 1.sp
                 )
             }
+
+            Spacer(modifier = Modifier.height(36.dp))
         }
     }
 }
 
-
 @Preview(showBackground = true, device = "spec:width=411dp,height=891dp", showSystemUi = true)
 @Composable
 fun LandingScreenPreview() {
-    // We wrap it in our app theme if you have one,
-    // otherwise MaterialTheme works fine.
     MaterialTheme {
-        LandingScreen(
-            onNavigate = { /* Do nothing in preview */ },
-            onNavigateBack = { /* Do nothing in preview */ }
-        )
+        LandingScreen(onNavigate = {})
     }
 }

@@ -1,9 +1,9 @@
 package com.example.mymedifetchproject.patient
 
+import android.content.res.Configuration
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,108 +21,95 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mymedifetchproject.Screen
+import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardPatientScreen(
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    isDarkMode: Boolean // ✅ Removed default value to ensure global sync
 ) {
-    // --- SMART LOGIC ENGINE ---
-    // Change this to 0.25f (Reviewing), 0.5f (Lab Needed), or 1.0f (Completed)
+    // --- 1. DYNAMIC THEME PALETTE ---
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
+    val primaryText = if (isDarkMode) Color.White else Color.Black
+    val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color.Gray
+    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+
+    // Action Alert Colors
+    val alertBg = if (isDarkMode) Color(0xFF2D1E00) else Color(0xFFFFF3E0)
+    val alertText = if (isDarkMode) Color(0xFFFFB74D) else Color(0xFFE65100)
+
+    // --- 2. WORKFLOW LOGIC ---
     val currentProgress = 0.5f
-
-    // Determine UI state based on progress
     val (statusInfo, routeInfo) = when {
-        currentProgress >= 1.0f -> {
-            Triple(
-                "Results Ready",
-                "Result: Malaria Positive. Tap to view your prescription.",
-                Icons.Default.AssignmentTurnedIn
-            ) to Screen.PatientReports.route
-        }
-        currentProgress >= 0.5f -> {
-            Triple(
-                "Lab Test Required",
-                "Doctor Smith requested a Lab Test. Tap to find a laboratory.",
-                Icons.Default.Science
-            ) to Screen.FindLabs.route
-        }
-        else -> {
-            Triple(
-                "Doctor is Reviewing",
-                "Your provider is reviewing your symptoms. Please wait for a request.",
-                Icons.Default.HourglassEmpty
-            ) to "no_action"
-        }
+        currentProgress >= 1.0f -> Triple("Results Ready", "Tap to view prescription.", Icons.Default.AssignmentTurnedIn) to Screen.PatientReports.route
+        currentProgress >= 0.5f -> Triple("Lab Test Required", "Doctor requested a Lab Test.", Icons.Default.Science) to Screen.FindLabs.route
+        else -> Triple("Reviewing", "Provider is reviewing symptoms.", Icons.Default.HourglassEmpty) to "no_action"
     }
-
-    val (caseStatus, caseInstructions, caseIcon) = statusInfo
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8FBFB))
+            .background(bgColor)
             .verticalScroll(rememberScrollState())
             .padding(20.dp)
     ) {
-        // --- PROFILE HEADER ---
+        // --- 3. HEADER ---
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier
-                    .size(45.dp)
-                    .background(Color(0xFF2C7B76), CircleShape),
+                modifier = Modifier.size(45.dp).background(accentTeal, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text("DJ", color = Color.White, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = "David John", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(text = "ID: MF-2026-001", color = Color.Gray, fontSize = 12.sp)
+                Text("David John", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = primaryText)
+                Text("ID: MF-2026-001", color = secondaryText, fontSize = 12.sp)
             }
             BadgedBox(badge = { Badge { Text("1") } }) {
-                Icon(Icons.Filled.Notifications, contentDescription = null)
+                Icon(Icons.Filled.Notifications, contentDescription = null, tint = primaryText)
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- URGENT ACTION CARD (The "Baton Pass") ---
+        // --- 4. ACTION ALERT ---
         if (currentProgress == 0.5f) {
             Card(
-                onClick = { onNavigate(Screen.FindLabs.route) },
+                onClick = { onNavigate(routeInfo) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)), // Warning Orange
-                elevation = CardDefaults.cardElevation(4.dp)
+                colors = CardDefaults.cardColors(containerColor = alertBg)
             ) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFE65100))
+                    Icon(Icons.Default.Warning, contentDescription = null, tint = alertText)
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text("Action Required", fontWeight = FontWeight.ExtraBold, color = Color(0xFFE65100))
-                        Text("A lab test is needed to finish your diagnosis.", fontSize = 12.sp)
+                        Text("Action Required", fontWeight = FontWeight.ExtraBold, color = alertText)
+                        Text("A lab test is needed to finish diagnosis.", fontSize = 12.sp, color = primaryText)
                     }
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // --- QUICK ACTION ---
-        Text(text = "Quick Actions", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        // --- 5. QUICK ACTIONS ---
+        Text("Quick Actions", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = primaryText)
         Spacer(modifier = Modifier.height(12.dp))
         Card(
             onClick = { onNavigate(Screen.ReportSickness.route) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF2C7B76))
+            colors = CardDefaults.cardColors(containerColor = accentTeal)
         ) {
             Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.MedicalInformation, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text("Report Sickness", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text("Contact your provider now", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
+                    Text("Contact provider now", color = Color.White.copy(alpha = 0.9f), fontSize = 12.sp)
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White)
@@ -131,124 +118,108 @@ fun DashboardPatientScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- STATS GRID ---
-        Box(modifier = Modifier.height(140.dp)) {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                userScrollEnabled = false,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                item {
-                    StatCard("Reports", "1", Icons.Filled.Description, Color(0xFFE0F2F1), Color(0xFF2C7B76)) {
-                        onNavigate(Screen.PatientReports.route)
-                    }
-                }
-                item {
-                    StatCard("Labs", "12", Icons.Filled.Science, Color(0xFFE3F2FD), Color(0xFF1E88E5)) {
-                        onNavigate(Screen.FindLabs.route)
-                    }
-                }
+        // --- 6. STATS ---
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            StatCard("Reports", "1", Icons.Filled.Description, cardBg, accentTeal, primaryText, secondaryText, isDarkMode) {
+                onNavigate(Screen.PatientReports.route)
+            }
+            StatCard("Labs", "12", Icons.Filled.Science, cardBg, Color(0xFF42A5F5), primaryText, secondaryText, isDarkMode) {
+                onNavigate(Screen.FindLabs.route)
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- ACTIVE CASE TRACKER ---
-        Text(text = "Active Health Case", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        // --- 7. ACTIVE TRACKER ---
+        Text("Active Health Case", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = primaryText)
         Spacer(modifier = Modifier.height(12.dp))
-
         ActiveCaseTracker(
             illness = "Fever & Shivering",
-            status = caseStatus,
+            status = statusInfo.first,
             progress = currentProgress,
-            instructionText = caseInstructions,
-            icon = caseIcon,
-            onTrackClick = {
-                if (routeInfo != "no_action") onNavigate(routeInfo)
-            }
+            instructionText = statusInfo.second,
+            icon = statusInfo.third,
+            themeColor = accentTeal,
+            cardBg = cardBg,
+            isDarkMode = isDarkMode,
+            primaryText = primaryText,
+            onTrackClick = { if (routeInfo != "no_action") onNavigate(routeInfo) }
         )
-
         Spacer(modifier = Modifier.height(100.dp))
+    }
+}
+
+// --- SUB-COMPONENTS ---
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StatCard(title: String, count: String, icon: ImageVector, cardBg: Color, iconColor: Color, primaryText: Color, secondaryText: Color, isDarkMode: Boolean, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.width(160.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = cardBg),
+        border = if (isDarkMode) BorderStroke(1.dp, Color(0xFF222222)) else null
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Box(modifier = Modifier.size(40.dp).background(iconColor.copy(alpha = 0.1f), RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(24.dp))
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(title, color = secondaryText, fontSize = 14.sp)
+            Text(count, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = primaryText)
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ActiveCaseTracker(
-    illness: String,
-    status: String,
-    progress: Float,
-    instructionText: String,
-    icon: ImageVector,
-    onTrackClick: () -> Unit
-) {
-    val themeColor = if (progress >= 1.0f) Color(0xFF388E3C) else Color(0xFF2C7B76)
-
+fun ActiveCaseTracker(illness: String, status: String, progress: Float, instructionText: String, icon: ImageVector, themeColor: Color, cardBg: Color, isDarkMode: Boolean, primaryText: Color, onTrackClick: () -> Unit) {
     Card(
         onClick = onTrackClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+        colors = CardDefaults.cardColors(containerColor = cardBg),
+        border = if (isDarkMode) BorderStroke(1.dp, Color(0xFF222222)) else null
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, contentDescription = null, tint = themeColor, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = illness, fontWeight = FontWeight.Bold)
+                Text(illness, fontWeight = FontWeight.Bold, color = primaryText)
                 Spacer(modifier = Modifier.weight(1f))
-                Text(text = status, color = themeColor, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(status, color = themeColor, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(12.dp))
             LinearProgressIndicator(
                 progress = { progress },
                 modifier = Modifier.fillMaxWidth().height(8.dp),
                 color = themeColor,
-                trackColor = themeColor.copy(alpha = 0.1f),
+                trackColor = themeColor.copy(alpha = 0.2f),
                 strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
             )
             Spacer(modifier = Modifier.height(12.dp))
-            Surface(
-                color = themeColor.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    text = instructionText,
-                    fontSize = 12.sp,
-                    color = themeColor,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(10.dp)
-                )
+            Surface(color = themeColor.copy(alpha = 0.15f), shape = RoundedCornerShape(8.dp)) {
+                Text(instructionText, fontSize = 12.sp, color = themeColor, fontWeight = FontWeight.Bold, modifier = Modifier.padding(10.dp))
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+// --- PREVIEWS ---
+
+@Preview(name = "Light Mode", showBackground = true)
 @Composable
-fun StatCard(title: String, count: String, icon: ImageVector, bgColor: Color, iconColor: Color, onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Box(modifier = Modifier.size(40.dp).background(bgColor, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(24.dp))
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(text = title, color = Color.Gray, fontSize = 14.sp)
-            Text(text = count, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-        }
+fun PreviewDashboardLight() {
+    MyMedifetchProjectTheme(darkTheme = false) {
+        DashboardPatientScreen(onNavigate = {}, isDarkMode = false)
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
-fun DashboardPatientPreview() {
-    DashboardPatientScreen(onNavigate = {})
+fun PreviewDashboardDark() {
+    MyMedifetchProjectTheme(darkTheme = true) {
+        DashboardPatientScreen(onNavigate = {}, isDarkMode = true)
+    }
 }

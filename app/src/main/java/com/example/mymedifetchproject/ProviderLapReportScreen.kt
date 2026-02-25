@@ -1,5 +1,3 @@
-//package com.example.mymedifetchproject
-
 package com.example.mymedifetchproject.provider
 
 import androidx.compose.foundation.background
@@ -9,7 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Medication
@@ -23,7 +21,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// 1. DATA MODEL FOR DOCTOR'S INBOX
 data class LabReportItem(
     val patientId: String,
     val patientName: String,
@@ -32,130 +29,177 @@ data class LabReportItem(
     val date: String
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProviderLabReportsScreen(
+    isDarkMode: Boolean, // Added for theme support
     onBack: () -> Unit,
-    onNavigateToPrescribe: (String) -> Unit // This MUST match the parameter name in your NavGraph
+    onNavigateToPrescribe: (String) -> Unit
 ) {
-    // 2. MOCK DATA (Next week: val reports by viewModel.getCompletedLabs())
+    // --- Dynamic Theme Palette ---
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    val primaryText = if (isDarkMode) Color.White else Color.Black
+    val secondaryText = if (isDarkMode) Color.Gray else Color.DarkGray
+    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+    val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
+
     val completedReports = listOf(
         LabReportItem("P-001", "David John", "Malaria RDT", "Parasite Detected: ++", "Today, 11:30 AM"),
         LabReportItem("P-045", "Sarah Adams", "Full Blood Count", "Normal Range", "Yesterday"),
         LabReportItem("P-089", "Michael Obi", "Typhoid Widal", "Reactive 1:160", "2 days ago")
     )
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Lab Results Inbox", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(bgColor)
+            .padding(top = 40.dp)
+            .padding(horizontal = 20.dp)
+    ) {
+        // --- Header ---
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = accentTeal,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "Lab Results Inbox",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = primaryText
             )
         }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF8FBFB))
-                .padding(padding)
-                .padding(horizontal = 20.dp)
-        ) {
-            Row(
-                modifier = Modifier.padding(vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.History, contentDescription = null, tint = Color(0xFF2C7B76))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Recently Completed Tests", color = Color.Gray, fontWeight = FontWeight.Medium)
-            }
 
-            // 3. THE LIST OF COMPLETED LABS
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(completedReports) { report ->
-                    ReportCard(report, onNavigateToPrescribe)
-                }
+        // --- Recently Completed Tests Label ---
+        Row(
+            modifier = Modifier.padding(top = 20.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.History,
+                contentDescription = null,
+                tint = accentTeal,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Recently Completed Tests",
+                color = secondaryText,
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.sp
+            )
+        }
+
+        // --- The List ---
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(bottom = 24.dp)
+        ) {
+            items(completedReports) { report ->
+                ReportCard(
+                    report = report,
+                    isDarkMode = isDarkMode,
+                    accentTeal = accentTeal,
+                    cardBg = cardBg,
+                    onAction = onNavigateToPrescribe
+                )
             }
         }
     }
 }
 
 @Composable
-fun ReportCard(report: LabReportItem, onAction: (String) -> Unit) {
+fun ReportCard(
+    report: LabReportItem,
+    isDarkMode: Boolean,
+    accentTeal: Color,
+    cardBg: Color,
+    onAction: (String) -> Unit
+) {
+    val primaryText = if (isDarkMode) Color.White else Color.Black
+    val dividerColor = if (isDarkMode) Color(0xFF222222) else Color(0xFFEEEEEE)
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(1.dp)
+        colors = CardDefaults.cardColors(containerColor = cardBg),
+        elevation = CardDefaults.cardElevation(if (isDarkMode) 0.dp else 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = CircleShape, color = Color(0xFFF1F8F7), modifier = Modifier.size(40.dp)) {
+                Surface(
+                    shape = CircleShape,
+                    color = accentTeal.copy(alpha = 0.1f),
+                    modifier = Modifier.size(36.dp)
+                ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Assignment, contentDescription = null, tint = Color(0xFF2C7B76), modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Default.Assignment,
+                            contentDescription = null,
+                            tint = accentTeal,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(report.patientName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text(report.testName, color = Color(0xFF2C7B76), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Text(report.patientName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = primaryText)
+                    Text(
+                        report.testName,
+                        color = accentTeal,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
                 Text(report.date, color = Color.Gray, fontSize = 11.sp)
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = Color(0xFFEEEEEE))
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 12.dp),
+                thickness = 0.5.dp,
+                color = dividerColor
+            )
 
-            Text("Lab Findings:", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color.Gray)
-            Text(report.resultSummary, fontWeight = FontWeight.Medium, fontSize = 14.sp, modifier = Modifier.padding(bottom = 12.dp))
+            Text("Lab Findings:", fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = Color.Gray)
+            Text(
+                report.resultSummary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                color = primaryText,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
 
-            // 4. THE PRESCRIBE BUTTON
             Button(
                 onClick = { onAction(report.patientId) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C7B76)),
-                shape = RoundedCornerShape(8.dp)
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = accentTeal),
+                shape = RoundedCornerShape(10.dp)
             ) {
-                Icon(Icons.Default.Medication, contentDescription = null, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Medication, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Write Prescription")
+                Text("Write Prescription", fontWeight = FontWeight.Bold)
             }
         }
     }
 }
 
-// --- 5. PREVIEW SECTION ---
+// --- PREVIEWS ---
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(name = "Light Mode", showBackground = true, showSystemUi = true)
 @Composable
-fun PreviewProviderLabReports() {
-    // We pass empty lambdas {} for the navigation actions in the preview
-    ProviderLabReportsScreen(
-        onBack = { /* No-op for preview */ },
-        onNavigateToPrescribe = { patientId ->
-            println("Navigating to prescribe for: $patientId")
-        }
-    )
+fun PreviewProviderLabReportsLight() {
+    ProviderLabReportsScreen(isDarkMode = false, onBack = {}, onNavigateToPrescribe = {})
 }
 
-@Preview(showBackground = true)
+@Preview(name = "Dark Mode", showBackground = true, showSystemUi = true)
 @Composable
-fun ReportCardPreview() {
-    // This allows you to see how an individual report card looks
-    val mockReport = LabReportItem(
-        patientId = "P-999",
-        patientName = "John Doe",
-        testName = "Blood Glucose Test",
-        resultSummary = "110 mg/dL (Fasting)",
-        date = "Oct 24, 2026"
-    )
-
-    Box(modifier = Modifier.padding(16.dp)) {
-        ReportCard(
-            report = mockReport,
-            onAction = { }
-        )
-    }
+fun PreviewProviderLabReportsDark() {
+    ProviderLabReportsScreen(isDarkMode = true, onBack = {}, onNavigateToPrescribe = {})
 }

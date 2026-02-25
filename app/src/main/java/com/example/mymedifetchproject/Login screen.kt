@@ -26,10 +26,19 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun LoginScreen(
     role: String = "patient",
+    isDarkMode: Boolean = false, // ✅ Added theme support
     onLoginSuccess: () -> Unit = {},
     onBack: () -> Unit = {},
     onForgotPassword: () -> Unit = {}
 ) {
+    // --- 1. DYNAMIC COLOR PALETTE ---
+    val bgColor = if (isDarkMode) Color(0xFF121212) else Color(0xFFE5E5E5)
+    val formBg = if (isDarkMode) Color(0xFF1E1E1E) else Color.White
+    val primaryText = if (isDarkMode) Color.White else Color.Black
+    val secondaryText = if (isDarkMode) Color.LightGray else Color.Gray
+    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+    val fieldContainer = if (isDarkMode) Color(0xFF2C2C2C) else Color.Transparent
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -37,20 +46,23 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFE5E5E5))
+            .background(bgColor) // Use dynamic background
     ) {
-        // --- Added Back Arrow for Consistency ---
+        // --- Back Arrow ---
         IconButton(
             onClick = onBack,
             modifier = Modifier
                 .padding(top = 40.dp, start = 16.dp)
                 .align(Alignment.TopStart)
-                .background(Color.White.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                .background(
+                    if (isDarkMode) Color.White.copy(alpha = 0.1f) else Color.White.copy(alpha = 0.5f),
+                    RoundedCornerShape(12.dp)
+                )
         ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF2C7B76))
+            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = accentTeal)
         }
 
-        // --- 1. Top Logo Section ---
+        // --- Logo Section ---
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -65,14 +77,14 @@ fun LoginScreen(
             )
         }
 
-        // --- 2. Bottom Form Section ---
+        // --- Bottom Form Section ---
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.65f)
                 .align(Alignment.BottomCenter)
                 .background(
-                    Color.White,
+                    formBg, // Use dynamic form background
                     shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp)
                 )
                 .padding(horizontal = 32.dp, vertical = 32.dp)
@@ -83,21 +95,21 @@ fun LoginScreen(
                 text = "Welcome Back",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF2C7B76)
+                color = accentTeal
             )
 
             Text(
                 text = "Sign in as $displayRole",
                 fontSize = 16.sp,
-                color = Color.Gray,
+                color = secondaryText,
                 fontWeight = FontWeight.Medium
             )
 
             Row(modifier = Modifier.padding(top = 12.dp)) {
-                Text(text = "Wrong account type? ", color = Color.Black, fontSize = 14.sp)
+                Text(text = "Wrong account type? ", color = primaryText, fontSize = 14.sp)
                 Text(
                     text = "Change",
-                    color = Color(0xFF2C7B76),
+                    color = accentTeal,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
                     modifier = Modifier.clickable { onBack() }
@@ -106,6 +118,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // --- Updated TextField with visibility fixes ---
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -114,8 +127,14 @@ fun LoginScreen(
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2C7B76),
-                    focusedLabelColor = Color(0xFF2C7B76)
+                    focusedTextColor = primaryText,
+                    unfocusedTextColor = primaryText,
+                    focusedContainerColor = fieldContainer,
+                    unfocusedContainerColor = fieldContainer,
+                    focusedBorderColor = accentTeal,
+                    unfocusedBorderColor = secondaryText,
+                    focusedLabelColor = accentTeal,
+                    unfocusedLabelColor = secondaryText
                 )
             )
 
@@ -132,12 +151,18 @@ fun LoginScreen(
                 trailingIcon = {
                     val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(imageVector = image, contentDescription = null, tint = Color(0xFF2C7B76))
+                        Icon(imageVector = image, contentDescription = null, tint = accentTeal)
                     }
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2C7B76),
-                    focusedLabelColor = Color(0xFF2C7B76)
+                    focusedTextColor = primaryText,
+                    unfocusedTextColor = primaryText,
+                    focusedContainerColor = fieldContainer,
+                    unfocusedContainerColor = fieldContainer,
+                    focusedBorderColor = accentTeal,
+                    unfocusedBorderColor = secondaryText,
+                    focusedLabelColor = accentTeal,
+                    unfocusedLabelColor = secondaryText
                 )
             )
 
@@ -147,7 +172,7 @@ fun LoginScreen(
                     .align(Alignment.End)
                     .padding(top = 8.dp)
                     .clickable { onForgotPassword() },
-                color = Color(0xFF2C7B76),
+                color = accentTeal,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -160,10 +185,10 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2C7B76)),
+                colors = ButtonDefaults.buttonColors(containerColor = accentTeal),
                 enabled = email.isNotEmpty() && password.isNotEmpty()
             ) {
-                Text("Login", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text("Login", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -173,6 +198,6 @@ fun LoginScreen(
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun LoginPreview() {
-    LoginScreen(role = "provider")
+fun LoginPreviewDark() {
+    LoginScreen(role = "provider", isDarkMode = true)
 }

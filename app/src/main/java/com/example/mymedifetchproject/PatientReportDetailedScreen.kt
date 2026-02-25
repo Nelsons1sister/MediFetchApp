@@ -1,13 +1,13 @@
 package com.example.mymedifetchproject.patient
 
-
-
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,9 +23,24 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun PatientReportDetailScreen(
     reportId: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    isDarkMode: Boolean // ✅ Forced sync: Removed default value
 ) {
-    // Mock data based on your malaria logic
+    // --- 1. DYNAMIC THEME PALETTE ---
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
+    val primaryText = if (isDarkMode) Color.White else Color.Black
+    val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color.Gray
+    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+
+    // Status Colors (Alert for Positive Result)
+    val alertBg = if (isDarkMode) Color(0xFF310B0B) else Color(0xFFFFEBEE)
+    val alertText = if (isDarkMode) Color(0xFFFF8A80) else Color(0xFFC62828)
+
+    // Prescription Box Colors
+    val prescrBg = if (isDarkMode) Color(0xFF00201E) else Color(0xFFE0F2F1)
+
+    // Mock data
     val diagnosis = "Plasmodium Falciparum (++)"
     val testType = "Malaria Parasite (RDT)"
     val date = "Feb 23, 2026"
@@ -40,68 +54,79 @@ fun PatientReportDetailScreen(
                 title = { Text("Medical Report", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Handle Download/Print */ }) {
+                    IconButton(onClick = { /* Download PDF Logic */ }) {
                         Icon(Icons.Default.Download, contentDescription = "Download")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = bgColor,
+                    titleContentColor = primaryText,
+                    navigationIconContentColor = accentTeal,
+                    actionIconContentColor = accentTeal
+                )
             )
         }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF8FBFB))
+                .background(bgColor)
                 .padding(padding)
                 .padding(20.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // --- HEADER STATUS ---
+            // --- 2. HEADER STATUS (Diagnosis Result) ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)), // Light Red for positive result
+                colors = CardDefaults.cardColors(containerColor = alertBg),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFC62828))
+                    Icon(Icons.Default.Warning, contentDescription = null, tint = alertText)
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text("Diagnosis: Positive", fontWeight = FontWeight.Bold, color = Color(0xFFC62828))
-                        Text("Please follow the prescription below.", fontSize = 12.sp, color = Color(0xFFC62828))
+                        Text("Diagnosis: Positive", fontWeight = FontWeight.Bold, color = alertText)
+                        Text("Please follow the prescription below.", fontSize = 12.sp, color = alertText.copy(alpha = 0.8f))
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- LAB DETAILS ---
-            Text("Laboratory Information", fontWeight = FontWeight.Bold, color = Color.Gray, fontSize = 14.sp)
+            // --- 3. LAB DETAILS ---
+            Text("Laboratory Information", fontWeight = FontWeight.Bold, color = secondaryText, fontSize = 14.sp)
             Spacer(modifier = Modifier.height(8.dp))
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(2.dp)
+                colors = CardDefaults.cardColors(containerColor = cardBg),
+                border = if (isDarkMode) BorderStroke(1.dp, Color(0xFF222222)) else null,
+                elevation = CardDefaults.cardElevation(if (isDarkMode) 0.dp else 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    DetailRow(label = "Case ID", value = "#$reportId")
-                    DetailRow(label = "Lab Facility", value = labName)
-                    DetailRow(label = "Date Released", value = date)
-                    DetailRow(label = "Test Performed", value = testType)
+                    DetailRow(label = "Case ID", value = "#$reportId", primaryText, secondaryText)
+                    DetailRow(label = "Lab Facility", value = labName, primaryText, secondaryText)
+                    DetailRow(label = "Date Released", value = date, primaryText, secondaryText)
+                    DetailRow(label = "Test Performed", value = testType, primaryText, secondaryText)
 
-                    Divider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp)
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        thickness = 0.5.dp,
+                        color = secondaryText.copy(alpha = 0.3f)
+                    )
 
-                    Text("Result Details:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("Result Details:", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = primaryText)
                     Text(
                         text = diagnosis,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF2C7B76),
+                        color = accentTeal,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
@@ -109,32 +134,32 @@ fun PatientReportDetailScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- PRESCRIPTION SECTION ---
-            Text("Doctor's Prescription", fontWeight = FontWeight.Bold, color = Color.Gray, fontSize = 14.sp)
+            // --- 4. PRESCRIPTION SECTION ---
+            Text("Doctor's Prescription", fontWeight = FontWeight.Bold, color = secondaryText, fontSize = 14.sp)
             Spacer(modifier = Modifier.height(8.dp))
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFE0F2F1)),
+                colors = CardDefaults.cardColors(containerColor = prescrBg),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Medication, contentDescription = null, tint = Color(0xFF2C7B76))
+                        Icon(Icons.Default.Medication, contentDescription = null, tint = accentTeal)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(doctorName, fontWeight = FontWeight.Bold)
+                        Text(doctorName, fontWeight = FontWeight.Bold, color = if (isDarkMode) Color.White else Color.Black)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = prescription,
                         fontSize = 15.sp,
                         lineHeight = 22.sp,
-                        color = Color.Black
+                        color = if (isDarkMode) Color.White.copy(alpha = 0.9f) else Color.Black
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "Note: Complete the full dosage even if symptoms disappear.",
                         fontSize = 11.sp,
-                        color = Color(0xFF2C7B76),
+                        color = accentTeal,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -142,34 +167,43 @@ fun PatientReportDetailScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- ACTION BUTTON ---
-            OutlinedButton(
+            // --- 5. RETURN BUTTON ---
+            Button(
                 onClick = onBack,
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                shape = RoundedCornerShape(12.dp)
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isDarkMode) Color(0xFF222222) else Color.Black
+                )
             ) {
-                Text("Return to Reports")
+                Text("Return to Reports", color = Color.White, fontWeight = FontWeight.Bold)
             }
+            Spacer(modifier = Modifier.height(40.dp))
         }
     }
 }
 
 @Composable
-fun DetailRow(label: String, value: String) {
+fun DetailRow(label: String, value: String, primaryText: Color, secondaryText: Color) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, color = Color.Gray, fontSize = 14.sp)
-        Text(value, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+        Text(label, color = secondaryText, fontSize = 14.sp)
+        Text(value, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = primaryText)
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+// --- 6. DUAL PREVIEWS ---
+
+@Preview(name = "Light Mode Detail", showBackground = true, showSystemUi = true)
 @Composable
-fun PatientReportDetailPreview() {
-    PatientReportDetailScreen(
-        reportId = "MF-2026-001",
-        onBack = {}
-    )
+fun ReportDetailPreviewLight() {
+    PatientReportDetailScreen(reportId = "MF-2026-001", onBack = {}, isDarkMode = false)
+}
+
+@Preview(name = "Dark Mode Detail", showBackground = true, showSystemUi = true)
+@Composable
+fun ReportDetailPreviewDark() {
+    PatientReportDetailScreen(reportId = "MF-2026-001", onBack = {}, isDarkMode = true)
 }
