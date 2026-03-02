@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.mymedifetchproject.Screen
 
@@ -22,11 +23,11 @@ fun PatientMainScreen(
     Scaffold(
         bottomBar = {
             NavigationBar(
-                containerColor = if (isDarkMode) androidx.compose.ui.graphics.Color.Black else MaterialTheme.colorScheme.surface,
+                containerColor = if (isDarkMode) Color.Black else MaterialTheme.colorScheme.surface,
                 tonalElevation = 8.dp
             ) {
                 val navItems = listOf(
-                    Triple("Home", Icons.Default.Home, Screen.PatientHome.route),
+                    Triple("Home", Icons.Default.Home, Screen.PatientDashboard.route),
                     Triple("Labs", Icons.Default.Science, Screen.FindLabs.route),
                     Triple("Reports", Icons.Default.Assessment, Screen.PatientReports.route),
                     Triple("Profile", Icons.Default.Person, Screen.PatientProfile.route)
@@ -45,9 +46,9 @@ fun PatientMainScreen(
                         label = { Text(label) },
                         icon = { Icon(icon, contentDescription = label) },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = if (isDarkMode) androidx.compose.ui.graphics.Color(0xFF4DB6AC) else MaterialTheme.colorScheme.primary,
-                            indicatorColor = if (isDarkMode) androidx.compose.ui.graphics.Color(0xFF4DB6AC).copy(alpha = 0.1f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            unselectedIconColor = if (isDarkMode) androidx.compose.ui.graphics.Color.Gray else MaterialTheme.colorScheme.onSurfaceVariant
+                            selectedIconColor = if (isDarkMode) Color(0xFF4DB6AC) else MaterialTheme.colorScheme.primary,
+                            indicatorColor = if (isDarkMode) Color(0xFF4DB6AC).copy(alpha = 0.1f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            unselectedIconColor = if (isDarkMode) Color.Gray else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
                 }
@@ -58,44 +59,51 @@ fun PatientMainScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(if (isDarkMode) androidx.compose.ui.graphics.Color.Black else MaterialTheme.colorScheme.background)
+                .background(if (isDarkMode) Color.Black else MaterialTheme.colorScheme.background)
         ) {
             when (currentRoute) {
-                Screen.PatientHome.route -> {
+                Screen.PatientDashboard.route -> {
                     DashboardPatientScreen(
                         onNavigate = { route -> onExternalNavigate(route) },
-                        isDarkMode = isDarkMode // ✅ Added
+                        isDarkMode = isDarkMode
                     )
                 }
                 Screen.FindLabs.route -> {
                     PatientFindLabScreen(
-                        onBack = { onExternalNavigate(Screen.PatientHome.route) },
+                        onBack = { onExternalNavigate(Screen.PatientDashboard.route) },
                         onNavigateToCheckIn = { name, addr ->
                             onExternalNavigate(Screen.LabCheckIn.createRoute(name, addr))
                         },
-                        isDarkMode = isDarkMode // ✅ Added
+                        isDarkMode = isDarkMode
                     )
                 }
                 Screen.PatientReports.route -> {
                     ReportsScreen(
-                        onBack = { onExternalNavigate(Screen.PatientHome.route) },
+                        onBack = { onExternalNavigate(Screen.PatientDashboard.route) },
                         onReportClick = { reportId ->
                             onExternalNavigate(Screen.PatientReportDetail.createRoute(reportId))
                         },
-                        isDarkMode = isDarkMode // ✅ Added
+                        isDarkMode = isDarkMode
                     )
                 }
                 Screen.PatientProfile.route -> {
+                    // ✅ FIXED: Now passing the required onEditProfile lambda
                     PatientProfileScreen(
                         isDarkMode = isDarkMode,
                         onThemeToggle = onThemeToggle,
-                        onLogout = { onExternalNavigate(Screen.Landing.route) }
+                        onEditProfile = {
+                            onExternalNavigate(Screen.EditProfile.route)
+                        },
+                        onLogout = {
+                            onExternalNavigate(Screen.Landing.route)
+                        }
                     )
                 }
                 else -> {
+                    // Default to Dashboard if route is null or unknown
                     DashboardPatientScreen(
                         onNavigate = { route -> onExternalNavigate(route) },
-                        isDarkMode = isDarkMode // ✅ Added
+                        isDarkMode = isDarkMode
                     )
                 }
             }

@@ -3,12 +3,13 @@ package com.example.mymedifetchproject.patient
 import com.example.mymedifetchproject.R
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -16,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -23,36 +25,63 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.mymedifetchproject.data.AuthViewModel
+import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 
 @Composable
 fun PatientRegisterScreen(
-    isDarkMode: Boolean = false,      // ✅ Added theme support
+    authViewModel: AuthViewModel,
+    isDarkMode: Boolean = false,
     onAccountCreated: () -> Unit = {},
-    onBack: () -> Unit = {}
+    onNavigateToLogin: () -> Unit = {},
+    onBack: () -> Unit = {},
 ) {
-    // --- 1. DYNAMIC THEME VARIABLES ---
-    val bgColor = if (isDarkMode) Color(0xFF121212) else Color(0xFFE5E5E5)
+    // --- 1. THEME VARIABLES ---
+    val bgColor = if (isDarkMode) Color(0xFF121212) else Color(0xFFF0F4F4)
     val formBg = if (isDarkMode) Color(0xFF1E1E1E) else Color.White
     val primaryText = if (isDarkMode) Color.White else Color.Black
-    val secondaryText = if (isDarkMode) Color.LightGray else Color.Gray
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+    val secondaryText = if (isDarkMode) Color.LightGray else Color(0xFF757575)
+    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C5E5A)
     val fieldContainer = if (isDarkMode) Color(0xFF2C2C2C) else Color.Transparent
 
-    // --- State Management ---
-    var fullName by remember { mutableStateOf("") }
+    // --- 2. STATE MANAGEMENT ---
+    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
+    var showSuccessDialog by remember { mutableStateOf(false) }
+
+    val isLoading by authViewModel.isLoading
+    val errorMessage by authViewModel.errorMessage
     val scrollState = rememberScrollState()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(bgColor) // ✅ Adaptive Background
-    ) {
-        // --- Back Button (Top Left) ---
+    // --- 3. SUCCESS POPUP ---
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("Account Verified", fontWeight = FontWeight.Bold) },
+            text = { Text("Welcome to MediFetch, $name! Your account has been created successfully.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showSuccessDialog = false
+                        onAccountCreated()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = accentTeal)
+                ) {
+                    Text("Get Started", color = Color.White)
+                }
+            },
+            containerColor = formBg,
+            titleContentColor = primaryText,
+            textContentColor = secondaryText
+        )
+    }
+
+    Box(modifier = Modifier.fillMaxSize().background(bgColor)) {
         IconButton(
             onClick = onBack,
             modifier = Modifier
@@ -63,51 +92,56 @@ fun PatientRegisterScreen(
                     RoundedCornerShape(12.dp)
                 )
         ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = accentTeal)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = accentTeal)
         }
 
-        // 1. Logo Section
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.32f),
+            modifier = Modifier.fillMaxWidth().fillMaxHeight(0.35f),
             contentAlignment = Alignment.Center
         ) {
             Image(
                 painter = painterResource(id = R.drawable.medical1),
                 contentDescription = "MediFetch Logo",
-                modifier = Modifier.size(160.dp)
+                modifier = Modifier.size(140.dp),
+                contentScale = ContentScale.Fit
             )
         }
 
-        // 2. Form Section (Adaptive Card)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.72f)
                 .align(Alignment.BottomCenter)
-                .background(
-                    color = formBg, // ✅ Adaptive Card Background
-                    shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp)
-                )
-                .padding(32.dp)
+                .background(formBg, shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp))
+                .padding(horizontal = 32.dp, vertical = 32.dp)
                 .verticalScroll(scrollState)
         ) {
-            Text(
-                text = "Patient Registration",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = accentTeal
-            )
-            Text(
-                text = "Create your personal health account",
-                color = secondaryText,
-                fontSize = 14.sp
-            )
+            Text(text = "Join MediFetch", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = accentTeal)
+            Text(text = "Create your personal health account", fontSize = 14.sp, color = secondaryText, modifier = Modifier.padding(top = 4.dp))
+
+            Row(modifier = Modifier.padding(top = 12.dp)) {
+                Text(text = "Already have an account? ", color = secondaryText, fontSize = 14.sp)
+                Text(
+                    text = "Login",
+                    color = accentTeal,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    modifier = Modifier.clickable { onNavigateToLogin() }
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Common Field Colors Helper ---
+            // --- Error Message Display ---
+            errorMessage?.let {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.Red.copy(alpha = 0.1f)),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                ) {
+                    Text(text = it, color = Color.Red, fontSize = 13.sp, modifier = Modifier.padding(12.dp), fontWeight = FontWeight.Medium)
+                }
+            }
+
             val textFieldColors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = primaryText,
                 unfocusedTextColor = primaryText,
@@ -119,58 +153,67 @@ fun PatientRegisterScreen(
                 unfocusedLabelColor = secondaryText
             )
 
-            // --- Input Fields ---
+            // ✅ REACTIVE INPUTS: clearError() added to onValueChange
             OutlinedTextField(
-                value = fullName,
-                onValueChange = { fullName = it },
+                value = name,
+                onValueChange = {
+                    name = it
+                    if (errorMessage != null) authViewModel.clearError()
+                },
                 label = { Text("Full Name") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
-                colors = textFieldColors
+                colors = textFieldColors,
+                enabled = !isLoading
             )
-
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
-                label = { Text("Personal Email") },
+                onValueChange = {
+                    email = it
+                    if (errorMessage != null) authViewModel.clearError()
+                },
+                label = { Text("Email Address") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
-                colors = textFieldColors
+                colors = textFieldColors,
+                enabled = !isLoading
             )
-
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = phone,
-                onValueChange = { phone = it },
+                onValueChange = {
+                    phone = it
+                    if (errorMessage != null) authViewModel.clearError()
+                },
                 label = { Text("Phone Number") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
-                colors = textFieldColors
+                colors = textFieldColors,
+                enabled = !isLoading
             )
-
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = {
+                    password = it
+                    if (errorMessage != null) authViewModel.clearError()
+                },
                 label = { Text("Password") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
+                enabled = !isLoading,
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                            contentDescription = "Toggle Visibility",
-                            tint = accentTeal
-                        )
+                        Icon(imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff, contentDescription = null, tint = accentTeal)
                     }
                 },
                 colors = textFieldColors
@@ -178,49 +221,42 @@ fun PatientRegisterScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- Register Button ---
             Button(
-                onClick = onAccountCreated,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                onClick = {
+                    authViewModel.signUp(email, password, name, phone, "patient") {
+                        showSuccessDialog = true
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = accentTeal)
+                colors = ButtonDefaults.buttonColors(containerColor = accentTeal),
+                enabled = !isLoading && name.isNotEmpty() && email.isNotEmpty() && phone.isNotEmpty() && password.length >= 6
             ) {
-                Text(
-                    text = "REGISTER",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // --- LOGIN REDIRECT ---
-            TextButton(
-                onClick = onAccountCreated,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Already have an account? ", color = secondaryText, fontSize = 14.sp)
-                    Text("Log In", color = accentTeal, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                if (isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                } else {
+                    Text(text = "CREATE ACCOUNT", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
                 }
             }
-
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(40.dp))
         }
     }
 }
 
-@Preview(name = "Dark Mode", showBackground = true, showSystemUi = true)
-@Composable
-fun PatientRegisterDarkPreview() {
-    PatientRegisterScreen(isDarkMode = true)
-}
+// --- PREVIEWS ---
 
-@Preview(name = "Light Mode", showBackground = true, showSystemUi = true)
+@Preview(name = "Patient Light Mode", showBackground = true, showSystemUi = true)
 @Composable
 fun PatientRegisterLightPreview() {
-    PatientRegisterScreen(isDarkMode = false)
+    MyMedifetchProjectTheme(darkTheme = false) {
+        PatientRegisterScreen(authViewModel = viewModel(), isDarkMode = false)
+    }
+}
+
+@Preview(name = "Patient Dark Mode", showBackground = true, showSystemUi = true)
+@Composable
+fun PatientRegisterDarkPreview() {
+    MyMedifetchProjectTheme(darkTheme = true) {
+        PatientRegisterScreen(authViewModel = viewModel(), isDarkMode = true)
+    }
 }

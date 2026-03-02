@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "816003649456",
+    "project_id": "medifetch-project",
+    "storage_bucket": "medifetch-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:816003649456:android:08679db9213d4078875075",
+        "android_client_info": {
+          "package_name": "com.example.mymedifetchproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAliBFDXb52F853NqWIo8uRTQQDx1r40GA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

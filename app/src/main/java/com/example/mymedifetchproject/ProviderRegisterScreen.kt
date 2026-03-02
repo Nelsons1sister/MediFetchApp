@@ -1,246 +1,259 @@
 package com.example.mymedifetchproject.provider
 
-import com.example.mymedifetchproject.R
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.mymedifetchproject.R
+import com.example.mymedifetchproject.data.AuthViewModel
+import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 
 @Composable
 fun ProviderRegisterScreen(
-    role: String?,
-    isDarkMode: Boolean = false,
-    onAccountCreated: () -> Unit = {},
-    onBack: () -> Unit = {},
+    role: String,
+    authViewModel: AuthViewModel = viewModel(),
+    isDarkMode: Boolean,
+    onAccountCreated: () -> Unit,
+    onNavigateToLogin: () -> Unit,
+    onBack: () -> Unit
 ) {
-    // --- 1. DYNAMIC THEME VARIABLES ---
-    val bgColor = if (isDarkMode) Color(0xFF121212) else Color(0xFFE5E5E5)
-    val formBg = if (isDarkMode) Color(0xFF1E1E1E) else Color.White
-    val primaryText = if (isDarkMode) Color.White else Color.Black
-    val secondaryText = if (isDarkMode) Color.LightGray else Color.Gray
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
-    val fieldContainer = if (isDarkMode) Color(0xFF2C2C2C) else Color.Transparent
-
-    // --- 2. STATE MANAGEMENT ---
-    var name by remember { mutableStateOf("") }
+    // --- FORM STATE ---
+    var facilityName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var licenseNumber by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    val scrollState = rememberScrollState()
+    var showSuccessDialog by remember { mutableStateOf(false) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(bgColor)
-    ) {
-        // --- Back Button ---
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier
-                .padding(top = 40.dp, start = 16.dp)
-                .align(Alignment.TopStart)
-                .background(
-                    if (isDarkMode) Color.White.copy(alpha = 0.1f) else Color.White.copy(alpha = 0.5f),
-                    RoundedCornerShape(12.dp)
-                )
-        ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = accentTeal)
-        }
+    // --- VIEWMODEL STATE ---
+    val isLoading by authViewModel.isLoading
+    val errorMessage by authViewModel.errorMessage
 
-        // --- Logo Section ---
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.32f),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.medical1),
-                contentDescription = "MediFetch Logo",
-                modifier = Modifier.size(160.dp),
-                contentScale = ContentScale.Fit
-            )
-        }
+    // --- THEME COLORS ---
+    val topBgColor = if (isDarkMode) Color(0xFF121212) else Color(0xFFF0F4F4)
+    val sheetColor = if (isDarkMode) Color(0xFF1E1E1E) else Color.White
+    val primaryTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C5E5A)
+    val inputTextColor = if (isDarkMode) Color.White else Color.Black
+    val labelColor = if (isDarkMode) Color.Gray else Color(0xFF757575)
 
-        // --- Form Section ---
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.72f)
-                .align(Alignment.BottomCenter)
-                .background(
-                    formBg,
-                    shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp)
-                )
-                .padding(horizontal = 32.dp, vertical = 32.dp)
-                .verticalScroll(scrollState)
-        ) {
-            Text(
-                text = "Provider Registration",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = accentTeal
-            )
+    val isFormValid = email.isNotEmpty() &&
+            password.length >= 6 &&
+            facilityName.isNotEmpty() &&
+            phoneNumber.isNotEmpty()
 
-            Text(
-                text = "Register your professional medical facility",
-                fontSize = 14.sp,
-                color = secondaryText,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+    // --- SUCCESS DIALOG ---
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("Registration Successful", fontWeight = FontWeight.Bold) },
+            text = { Text("The facility '$facilityName' has been registered successfully.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showSuccessDialog = false
+                        onAccountCreated()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryTeal)
+                ) {
+                    Text("Proceed to Login", color = Color.White)
+                }
+            },
+            containerColor = sheetColor,
+            titleContentColor = inputTextColor,
+            textContentColor = labelColor
+        )
+    }
 
-            Row(modifier = Modifier.padding(top = 12.dp)) {
-                Text(text = "Already have an account? ", color = secondaryText, fontSize = 14.sp)
-                Text(
-                    text = "Login",
-                    color = accentTeal,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    modifier = Modifier.clickable { onAccountCreated() }
+    Box(modifier = Modifier.fillMaxSize().background(topBgColor)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+
+            // --- HEADER ---
+            Box(modifier = Modifier.fillMaxWidth().height(160.dp)) {
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .padding(top = 40.dp, start = 16.dp)
+                        .align(Alignment.TopStart)
+                        .background(sheetColor.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = primaryTeal)
+                }
+
+                Image(
+                    painter = painterResource(id = R.drawable.medical1),
+                    contentDescription = "App Logo",
+                    modifier = Modifier.size(100.dp).align(Alignment.Center)
                 )
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
-
-            // --- Shared Field Configuration ---
-            val textFieldColors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = primaryText,
-                unfocusedTextColor = primaryText,
-                focusedContainerColor = fieldContainer,
-                unfocusedContainerColor = fieldContainer,
-                focusedBorderColor = accentTeal,
-                unfocusedBorderColor = secondaryText,
-                focusedLabelColor = accentTeal,
-                unfocusedLabelColor = secondaryText
-            )
-
-            // --- Fields ---
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Facility / Practice Name") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                colors = textFieldColors
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Work Email Address") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                colors = textFieldColors
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = licenseNumber,
-                onValueChange = { licenseNumber = it },
-                label = { Text("Medical License Number") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                colors = textFieldColors
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { phone = it },
-                label = { Text("Contact Phone Number") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                colors = textFieldColors
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                            contentDescription = "Toggle Visibility",
-                            tint = accentTeal
-                        )
-                    }
-                },
-                colors = textFieldColors
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Register Button
-            Button(
-                onClick = onAccountCreated,
+            // --- REGISTRATION FORM ---
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = accentTeal),
-                enabled = email.isNotEmpty() && password.isNotEmpty() && name.isNotEmpty()
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp))
+                    .background(sheetColor)
+                    .padding(horizontal = 32.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
-                Text(
-                    text = "REGISTER FACILITY",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
+                Spacer(modifier = Modifier.height(32.dp))
 
-            Spacer(modifier = Modifier.height(40.dp))
+                Text("Provider Registration", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = primaryTeal)
+
+                val loginText = buildAnnotatedString {
+                    append("Already have an account? ")
+                    withStyle(style = SpanStyle(color = primaryTeal, fontWeight = FontWeight.Bold)) {
+                        append("Login")
+                    }
+                }
+                Text(
+                    text = loginText,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 24.dp).clickable { onNavigateToLogin() }
+                )
+
+                // --- ERROR DISPLAY ---
+                errorMessage?.let {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color.Red.copy(alpha = 0.1f)),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                    ) {
+                        Text(it, color = Color.Red, fontSize = 13.sp, modifier = Modifier.padding(12.dp))
+                    }
+                }
+
+                val fieldColors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = primaryTeal,
+                    unfocusedBorderColor = labelColor.copy(alpha = 0.5f),
+                    focusedTextColor = inputTextColor,
+                    unfocusedTextColor = inputTextColor
+                )
+
+                // --- INPUTS WITH AUTO-CLEAR LOGIC ---
+                OutlinedTextField(
+                    value = facilityName,
+                    onValueChange = {
+                        facilityName = it
+                        if (errorMessage != null) authViewModel.clearError() // ✅ Clears error on type
+                    },
+                    label = { Text("Facility / Clinic Name") },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = fieldColors,
+                    enabled = !isLoading,
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = {
+                        email = it
+                        if (errorMessage != null) authViewModel.clearError() // ✅ Clears error on type
+                    },
+                    label = { Text("Work Email") },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = fieldColors,
+                    enabled = !isLoading,
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = {
+                        password = it
+                        if (errorMessage != null) authViewModel.clearError() // ✅ Clears error on type
+                    },
+                    label = { Text("Create Password") },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = fieldColors,
+                    enabled = !isLoading,
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, contentDescription = null)
+                        }
+                    }
+                )
+
+                OutlinedTextField(
+                    value = phoneNumber,
+                    onValueChange = {
+                        phoneNumber = it
+                        if (errorMessage != null) authViewModel.clearError() // ✅ Clears error on type
+                    },
+                    label = { Text("Phone Number") },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = fieldColors,
+                    enabled = !isLoading,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                )
+
+                // --- ACTION BUTTON ---
+                Button(
+                    onClick = {
+                        authViewModel.signUp(email, password, facilityName, phoneNumber, role) {
+                            showSuccessDialog = true
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryTeal),
+                    enabled = !isLoading && isFormValid
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text("REGISTER FACILITY", fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    }
+                }
+                Spacer(modifier = Modifier.height(40.dp))
+            }
         }
     }
 }
 
-// --- 3. PREVIEWS ---
-
+// --- PREVIEWS ---
 @Preview(name = "Light Mode", showBackground = true, showSystemUi = true)
 @Composable
-fun ProviderRegisterLightPreview() {
-    ProviderRegisterScreen(role = "provider", isDarkMode = false)
+fun ProviderRegisterPreviewLight() {
+    MyMedifetchProjectTheme(darkTheme = false) {
+        ProviderRegisterScreen("provider", viewModel(), false, {}, {}, {})
+    }
 }
 
 @Preview(name = "Dark Mode", showBackground = true, showSystemUi = true)
 @Composable
-fun ProviderRegisterDarkPreview() {
-    ProviderRegisterScreen(role = "provider", isDarkMode = true)
+fun ProviderRegisterPreviewDark() {
+    MyMedifetchProjectTheme(darkTheme = true) {
+        ProviderRegisterScreen("provider", viewModel(), true, {}, {}, {})
+    }
 }

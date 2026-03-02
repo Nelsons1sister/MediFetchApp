@@ -6,7 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -22,31 +22,39 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.mymedifetchproject.data.AuthViewModel
+import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 
 @Composable
 fun LoginScreen(
     role: String = "patient",
-    isDarkMode: Boolean = false, // ✅ Added theme support
-    onLoginSuccess: () -> Unit = {},
+    authViewModel: AuthViewModel,
+    isDarkMode: Boolean = false,
+    onLoginSuccess: (String) -> Unit = {},
     onBack: () -> Unit = {},
     onForgotPassword: () -> Unit = {}
 ) {
     // --- 1. DYNAMIC COLOR PALETTE ---
-    val bgColor = if (isDarkMode) Color(0xFF121212) else Color(0xFFE5E5E5)
+    val bgColor = if (isDarkMode) Color(0xFF121212) else Color(0xFFF0F4F4)
     val formBg = if (isDarkMode) Color(0xFF1E1E1E) else Color.White
     val primaryText = if (isDarkMode) Color.White else Color.Black
-    val secondaryText = if (isDarkMode) Color.LightGray else Color.Gray
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+    val secondaryText = if (isDarkMode) Color.LightGray else Color(0xFF757575)
+    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C5E5A)
     val fieldContainer = if (isDarkMode) Color(0xFF2C2C2C) else Color.Transparent
 
+    // --- 2. STATE MANAGEMENT ---
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
+    val isLoading by authViewModel.isLoading
+    val errorMessage by authViewModel.errorMessage
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(bgColor) // Use dynamic background
+            .background(bgColor)
     ) {
         // --- Back Arrow ---
         IconButton(
@@ -59,7 +67,7 @@ fun LoginScreen(
                     RoundedCornerShape(12.dp)
                 )
         ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = accentTeal)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = accentTeal)
         }
 
         // --- Logo Section ---
@@ -72,7 +80,7 @@ fun LoginScreen(
             Image(
                 painter = painterResource(id = R.drawable.medical1),
                 contentDescription = "MediFetch Logo",
-                modifier = Modifier.size(180.dp),
+                modifier = Modifier.size(160.dp),
                 contentScale = ContentScale.Fit
             )
         }
@@ -84,7 +92,7 @@ fun LoginScreen(
                 .fillMaxHeight(0.65f)
                 .align(Alignment.BottomCenter)
                 .background(
-                    formBg, // Use dynamic form background
+                    formBg,
                     shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp)
                 )
                 .padding(horizontal = 32.dp, vertical = 32.dp)
@@ -93,20 +101,20 @@ fun LoginScreen(
 
             Text(
                 text = "Welcome Back",
-                fontSize = 28.sp,
+                fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
                 color = accentTeal
             )
 
             Text(
                 text = "Sign in as $displayRole",
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 color = secondaryText,
                 fontWeight = FontWeight.Medium
             )
 
-            Row(modifier = Modifier.padding(top = 12.dp)) {
-                Text(text = "Wrong account type? ", color = primaryText, fontSize = 14.sp)
+            Row(modifier = Modifier.padding(top = 8.dp)) {
+                Text(text = "Wrong account type? ", color = secondaryText, fontSize = 14.sp)
                 Text(
                     text = "Change",
                     color = accentTeal,
@@ -118,7 +126,34 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Updated TextField with visibility fixes ---
+            // ✅ NEW: Error Message Card (Visual Feedback)
+            errorMessage?.let {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.Red.copy(alpha = 0.1f)),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                ) {
+                    Text(
+                        text = it,
+                        color = Color.Red,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(12.dp),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            // --- Input Fields ---
+            val textFieldColors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = primaryText,
+                unfocusedTextColor = primaryText,
+                focusedContainerColor = fieldContainer,
+                unfocusedContainerColor = fieldContainer,
+                focusedBorderColor = accentTeal,
+                unfocusedBorderColor = secondaryText,
+                focusedLabelColor = accentTeal,
+                unfocusedLabelColor = secondaryText
+            )
+
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -126,16 +161,8 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = primaryText,
-                    unfocusedTextColor = primaryText,
-                    focusedContainerColor = fieldContainer,
-                    unfocusedContainerColor = fieldContainer,
-                    focusedBorderColor = accentTeal,
-                    unfocusedBorderColor = secondaryText,
-                    focusedLabelColor = accentTeal,
-                    unfocusedLabelColor = secondaryText
-                )
+                colors = textFieldColors,
+                enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -147,6 +174,7 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
+                enabled = !isLoading,
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
@@ -154,16 +182,7 @@ fun LoginScreen(
                         Icon(imageVector = image, contentDescription = null, tint = accentTeal)
                     }
                 },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = primaryText,
-                    unfocusedTextColor = primaryText,
-                    focusedContainerColor = fieldContainer,
-                    unfocusedContainerColor = fieldContainer,
-                    focusedBorderColor = accentTeal,
-                    unfocusedBorderColor = secondaryText,
-                    focusedLabelColor = accentTeal,
-                    unfocusedLabelColor = secondaryText
-                )
+                colors = textFieldColors
             )
 
             Text(
@@ -179,16 +198,37 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
+            // --- LOGIN BUTTON ---
             Button(
-                onClick = { onLoginSuccess() },
+                onClick = {
+                    authViewModel.login(
+                        email = email,
+                        pass = password,
+                        onRoleFound = { verifiedRole ->
+                            onLoginSuccess(verifiedRole)
+                        }
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = accentTeal),
-                enabled = email.isNotEmpty() && password.isNotEmpty()
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = accentTeal,
+                    disabledContainerColor = if (isDarkMode) Color(0xFF333333) else Color(0xFFE0E0E0)
+                ),
+                enabled = !isLoading && email.isNotEmpty() && password.length >= 6
             ) {
-                Text("Login", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                if (isLoading) {
+                    // ✅ VISUAL FEEDBACK: The Spinner
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("LOGIN", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -196,8 +236,19 @@ fun LoginScreen(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+// --- PREVIEWS ---
+@Preview(name = "Login Light Mode", showBackground = true, showSystemUi = true)
+@Composable
+fun LoginPreviewLight() {
+    MyMedifetchProjectTheme(darkTheme = false) {
+        LoginScreen(role = "patient", isDarkMode = false, authViewModel = viewModel())
+    }
+}
+
+@Preview(name = "Login Dark Mode", showBackground = true, showSystemUi = true)
 @Composable
 fun LoginPreviewDark() {
-    LoginScreen(role = "provider", isDarkMode = true)
+    MyMedifetchProjectTheme(darkTheme = true) {
+        LoginScreen(role = "provider", isDarkMode = true, authViewModel = viewModel())
+    }
 }

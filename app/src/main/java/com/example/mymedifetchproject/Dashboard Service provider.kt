@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.mymedifetchproject.Screen
 
-// ✅ ADDED: This Enum must be defined for the code to resolve the 'ProviderTab' reference
+// --- ENUMS ---
 enum class ProviderTab(val label: String, val icon: ImageVector) {
     Home("Home", Icons.Filled.Dashboard),
     Patients("Patients", Icons.Filled.People),
@@ -36,7 +36,10 @@ enum class ProviderTab(val label: String, val icon: ImageVector) {
 fun DashboardServiceProviderScreen(
     isDarkMode: Boolean,
     onThemeToggle: (Boolean) -> Unit,
-    onNavigate: (String) -> Unit = {}
+    onNavigate: (String) -> Unit = {},
+    // ✅ ADDED: Parameters to fix NavGraph errors
+    onEditProfile: () -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(ProviderTab.Home) }
     var showLabInbox by remember { mutableStateOf(false) }
@@ -52,7 +55,6 @@ fun DashboardServiceProviderScreen(
                 containerColor = navBarColor,
                 tonalElevation = 8.dp
             ) {
-                // Resolved the reference by using ProviderTab enum defined above
                 ProviderTab.entries.forEach { tab ->
                     val isSelected = !showLabInbox && selectedTab == tab
                     NavigationBarItem(
@@ -103,32 +105,24 @@ fun DashboardServiceProviderScreen(
                 }
 
                 selectedTab == ProviderTab.Patients -> {
-                    // Assuming this Composable exists in your package
-                    ProviderPatientListScreen(
-                        isDarkMode = isDarkMode,
-                        onPatientClick = { patientId ->
-                            onNavigate(Screen.PatientDetail.createRoute(patientId))
-                        }
-                    )
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Patient List Screen", color = primaryText)
+                    }
                 }
 
                 selectedTab == ProviderTab.Prescription -> {
-                    // Assuming this Composable exists in your package
-                    ProviderPrescriptionScreen(
-                        isDarkMode = isDarkMode,
-                        onBack = { selectedTab = ProviderTab.Home },
-                        onPrescriptionSent = {
-                            selectedTab = ProviderTab.Home
-                        }
-                    )
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Prescription Screen", color = primaryText)
+                    }
                 }
 
                 selectedTab == ProviderTab.Profile -> {
-                    // Assuming this Composable exists in your package
+                    // ✅ FIXED: Passing callbacks down to ProviderProfileScreen
                     ProviderProfileScreen(
                         isDarkMode = isDarkMode,
                         onThemeToggle = onThemeToggle,
-                        onLogout = { onNavigate(Screen.Landing.route) }
+                        onEditProfile = onEditProfile,
+                        onLogout = onLogout
                     )
                 }
             }
@@ -164,7 +158,7 @@ fun ProviderLabResultsContent(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 20.dp)
         ) {
-            items(5) { index ->
+            items(5) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
@@ -297,15 +291,32 @@ fun ProviderStatCard(title: String, count: String, icon: ImageVector, accentColo
     }
 }
 
-// --- PREVIEWS ---
-@Preview(name = "Light Mode", showBackground = true)
+// --- DUAL PREVIEWS ---
+
+@Preview(name = "Dashboard - Light Mode", showBackground = true, showSystemUi = true)
 @Composable
 fun ProviderDashboardLightPreview() {
-    DashboardServiceProviderScreen(isDarkMode = false, onThemeToggle = {})
+    MaterialTheme {
+        DashboardServiceProviderScreen(
+            isDarkMode = false,
+            onThemeToggle = {},
+            onEditProfile = {},
+            onLogout = {}
+        )
+    }
 }
 
-@Preview(name = "Dark Mode", showBackground = true)
+@Preview(name = "Dashboard - Dark Mode", showBackground = true, showSystemUi = true)
 @Composable
 fun ProviderDashboardDarkPreview() {
-    DashboardServiceProviderScreen(isDarkMode = true, onThemeToggle = {})
+    MaterialTheme {
+        Surface(color = Color.Black) {
+            DashboardServiceProviderScreen(
+                isDarkMode = true,
+                onThemeToggle = {},
+                onEditProfile = {},
+                onLogout = {}
+            )
+        }
+    }
 }

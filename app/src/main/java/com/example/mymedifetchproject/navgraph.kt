@@ -7,19 +7,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 
-// --- Shared & Entry ---
+import com.example.mymedifetchproject.data.AuthViewModel
 import com.example.mymedifetchproject.medifetch.SplashScreen
-import com.example.mymedifetchproject.LandingScreen
-import com.example.mymedifetchproject.ChooseAccountTypeScreen
-import com.example.mymedifetchproject.LoginScreen
-
-// --- Patient & Provider ---
 import com.example.mymedifetchproject.patient.*
 import com.example.mymedifetchproject.provider.*
-
-@Composable
+import com.example.mymedifetchproject.shared.* @Composable
 fun NavGraph(
     navController: NavHostController,
+    authViewModel: AuthViewModel,
     isDarkMode: Boolean,
     currentRoute: String?,
     onThemeToggle: (Boolean) -> Unit,
@@ -30,12 +25,24 @@ fun NavGraph(
         startDestination = Screen.Splash.route
     ) {
 
-        // --- 0. SPLASH & ENTRY ---
+        // --- 0. SPLASH & SESSION ---
         composable(route = Screen.Splash.route) {
             SplashScreen(onAnimationFinished = {
-                navController.navigate(Screen.Landing.route) {
-                    popUpTo(Screen.Splash.route) { inclusive = true }
-                }
+                authViewModel.checkUserSession(
+                    onSessionFound = { verifiedRole ->
+                        // Routes to appropriate dashboard based on Supabase role
+                        val target = if (verifiedRole == "provider") Screen.ProviderDashboard.route
+                        else Screen.PatientDashboard.route
+                        navController.navigate(target) {
+                            popUpTo(Screen.Splash.route) { inclusive = true }
+                        }
+                    },
+                    onNoSession = {
+                        navController.navigate(Screen.Landing.route) {
+                            popUpTo(Screen.Splash.route) { inclusive = true }
+                        }
+                    }
+                )
             })
         }
 
@@ -46,13 +53,13 @@ fun NavGraph(
         composable(route = Screen.AccountSelect.route) {
             ChooseAccountTypeScreen(
                 onBack = { navController.popBackStack() },
-                onRoleSelected = { role: String ->
+                onRoleSelected = { role ->
                     navController.navigate(Screen.CreateAccount.createRoute(role))
                 }
             )
         }
 
-        // ✅ FIXED: Passing isDarkMode to Registration Screens
+        // --- 1. AUTHENTICATION ---
         composable(
             route = Screen.CreateAccount.route,
             arguments = listOf(navArgument("role") { type = NavType.StringType })
@@ -61,20 +68,23 @@ fun NavGraph(
             if (role == "provider") {
                 ProviderRegisterScreen(
                     role = role,
-                    isDarkMode = isDarkMode, // Pass theme here
+                    authViewModel = authViewModel,
+                    isDarkMode = isDarkMode,
                     onAccountCreated = { navController.navigate(Screen.Login.createRoute(role)) },
+                    onNavigateToLogin = { navController.navigate(Screen.Login.createRoute("provider")) },
                     onBack = { navController.popBackStack() }
                 )
             } else {
                 PatientRegisterScreen(
-                    isDarkMode = isDarkMode, // Pass theme here
+                    authViewModel = authViewModel,
+                    isDarkMode = isDarkMode,
                     onAccountCreated = { navController.navigate(Screen.Login.createRoute(role)) },
+                    onNavigateToLogin = { navController.navigate(Screen.Login.createRoute("patient")) },
                     onBack = { navController.popBackStack() }
                 )
             }
         }
 
-        // ✅ FIXED: Passing isDarkMode to Login Screen
         composable(
             route = Screen.Login.route,
             arguments = listOf(navArgument("role") { type = NavType.StringType })
@@ -82,11 +92,11 @@ fun NavGraph(
             val selectedRole = entry.arguments?.getString("role") ?: "patient"
             LoginScreen(
                 role = selectedRole,
-                isDarkMode = isDarkMode, // Pass theme here
-                onLoginSuccess = {
-                    val target = if (selectedRole == "provider") Screen.ProviderDashboard.route
+                authViewModel = authViewModel,
+                isDarkMode = isDarkMode,
+                onLoginSuccess = { verifiedRole ->
+                    val target = if (verifiedRole == "provider") Screen.ProviderDashboard.route
                     else Screen.PatientDashboard.route
-
                     navController.navigate(target) {
                         popUpTo(Screen.Landing.route) { inclusive = true }
                     }
@@ -95,7 +105,7 @@ fun NavGraph(
             )
         }
 
-        // --- 2. AUTHENTICATED ZONE (PATIENT) ---
+        // --- 2. PATIENT ZONE ---
         val patientMainTabs = listOf(
             Screen.PatientDashboard.route,
             Screen.FindLabs.route,
@@ -109,33 +119,9 @@ fun NavGraph(
                     isDarkMode = isDarkMode,
                     onThemeToggle = onThemeToggle,
                     currentRoute = currentRoute,
-                    onExternalNavigate = onNavigate
+                    onExternalNavigate = { target -> navController.navigate(target) }
                 )
             }
-        }
-
-        // ✅ Patient Check-In Route
-        composable(
-            route = Screen.LabCheckIn.route,
-            arguments = listOf(
-                navArgument("name") { type = NavType.StringType },
-                navArgument("address") { type = NavType.StringType }
-            )
-        ) { entry ->
-            val pName = entry.arguments?.getString("name") ?: "Patient"
-            val pAddress = entry.arguments?.getString("address") ?: ""
-
-            LabWaitingRoomScreen(
-                patientName = pName,
-                labUnit = pAddress,
-                isDarkMode = isDarkMode,
-                onBack = { navController.popBackStack() },
-                onConfirmCheckIn = {
-                    navController.navigate(Screen.PatientDashboard.route) {
-                        popUpTo(Screen.PatientDashboard.route) { inclusive = true }
-                    }
-                }
-            )
         }
 
         // --- 3. PROVIDER ZONE ---
@@ -143,7 +129,18 @@ fun NavGraph(
             DashboardServiceProviderScreen(
                 isDarkMode = isDarkMode,
                 onThemeToggle = onThemeToggle,
-                onNavigate = { route: String -> navController.navigate(route) }
+                onNavigate = { targetRoute -> navController.navigate(targetRoute) },
+                // ✅ FIXED: This triggers the navigation to the Edit Profile screen
+                onEditProfile = {
+                    navController.navigate(Screen.EditProfile.route)
+                },
+                onLogout = {
+                    authViewModel.logout {
+                        navController.navigate(Screen.Landing.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }
             )
         }
 
@@ -151,42 +148,20 @@ fun NavGraph(
             LabWaitingRoomScreen(
                 isDarkMode = isDarkMode,
                 onBack = { navController.popBackStack() },
-                onConfirmCheckIn = {
-                    navController.navigate(Screen.ProviderLabInbox.route) {
-                        popUpTo(Screen.LabWaitingRoom.route) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        composable(route = Screen.ProviderLabInbox.route) {
-            ProviderLabReportsScreen(
-                isDarkMode = isDarkMode,
-                onBack = { navController.popBackStack() },
-                onNavigateToPrescribe = { patientId: String ->
-                    navController.navigate(Screen.ProviderPrescription.createRoute(patientId))
-                }
-            )
-        }
-
-        composable(
-            route = Screen.ProviderPrescription.route,
-            arguments = listOf(navArgument("patientId") { type = NavType.StringType })
-        ) { entry ->
-            val pId = entry.arguments?.getString("patientId") ?: ""
-            ProviderPrescriptionScreen(
-                isDarkMode = isDarkMode,
-                initialPatientId = pId,
-                onBack = { navController.popBackStack() },
-                onPrescriptionSent = {
-                    navController.navigate(Screen.ProviderDashboard.route) {
-                        popUpTo(Screen.ProviderDashboard.route) { inclusive = true }
-                    }
-                }
+                onConfirmCheckIn = { navController.popBackStack() }
             )
         }
 
         // --- 4. SHARED & DETAILS ---
+        composable(route = Screen.EditProfile.route) {
+            // Uses the shared EditProfilePatientScreen as requested
+            EditProfilePatientScreen(
+                authViewModel = authViewModel,
+                isDarkMode = isDarkMode,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         composable(route = Screen.ReportSickness.route) {
             ReportSicknessScreen(
                 onBack = { navController.popBackStack() },
