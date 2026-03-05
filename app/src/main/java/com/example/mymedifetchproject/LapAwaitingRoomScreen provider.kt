@@ -17,21 +17,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LabWaitingRoomScreen( // Changed from LabCheckInScreen
+fun LabWaitingRoomScreen(
     patientName: String = "David John",
     labUnit: String = "Diagnostics Unit 1",
     isDarkMode: Boolean,
     onBack: () -> Unit,
     onConfirmCheckIn: () -> Unit
 ) {
-    // --- Dynamic Theme Palette ---
-    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
-    val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
+    // --- Dynamic Theme Palette (Synced with Dashboard Blue) ---
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF5F9FF)
+    val cardBg = if (isDarkMode) Color(0xFF1A1A1A) else Color.White
     val primaryText = if (isDarkMode) Color.White else Color.Black
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+    val accentBlue = if (isDarkMode) Color(0xFF64B5F6) else Color(0xFF0D47A1)
     val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color.Gray
 
     Scaffold(
@@ -45,7 +46,7 @@ fun LabWaitingRoomScreen( // Changed from LabCheckInScreen
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = accentTeal
+                            tint = accentBlue
                         )
                     }
                 },
@@ -67,13 +68,13 @@ fun LabWaitingRoomScreen( // Changed from LabCheckInScreen
             Box(contentAlignment = Alignment.BottomEnd) {
                 Surface(
                     shape = CircleShape,
-                    color = accentTeal.copy(alpha = 0.1f),
+                    color = accentBlue.copy(alpha = 0.1f),
                     modifier = Modifier.size(140.dp)
                 ) {
                     Icon(
                         Icons.Default.Science,
                         contentDescription = null,
-                        tint = accentTeal,
+                        tint = accentBlue,
                         modifier = Modifier.padding(36.dp)
                     )
                 }
@@ -85,7 +86,7 @@ fun LabWaitingRoomScreen( // Changed from LabCheckInScreen
                     Icon(
                         Icons.Default.CheckCircle,
                         contentDescription = "Status Active",
-                        tint = Color(0xFF43A047),
+                        tint = Color(0xFF4CAF50), // Standard Success Green
                         modifier = Modifier.size(40.dp)
                     )
                 }
@@ -95,26 +96,27 @@ fun LabWaitingRoomScreen( // Changed from LabCheckInScreen
 
             // --- Patient Information ---
             Text(
-                text = "Patient Checked-In",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = accentTeal,
-                letterSpacing = 1.sp
+                text = "PATIENT QUEUED",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = accentBlue,
+                letterSpacing = 1.2.sp
             )
 
             Text(
                 text = patientName,
                 fontSize = 28.sp,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Black,
                 color = primaryText,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
 
             Text(
-                text = "Station: $labUnit",
+                text = "Assigned to: $labUnit",
                 color = secondaryText,
-                fontSize = 16.sp
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
             )
 
             Spacer(modifier = Modifier.height(48.dp))
@@ -122,25 +124,29 @@ fun LabWaitingRoomScreen( // Changed from LabCheckInScreen
             // --- Instruction Card ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = cardBg),
-                elevation = CardDefaults.cardElevation(if (isDarkMode) 0.dp else 2.dp)
+                elevation = CardDefaults.cardElevation(if (isDarkMode) 0.dp else 4.dp)
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.CheckCircle, null, tint = accentBlue, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Next Lab Steps",
+                            fontWeight = FontWeight.Bold,
+                            color = primaryText,
+                            fontSize = 18.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        "Next Steps",
-                        fontWeight = FontWeight.Bold,
-                        color = primaryText,
-                        fontSize = 18.sp
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        "1. Verify the patient's ID band.\n" +
-                                "2. Collect blood sample for Malaria RDT.\n" +
-                                "3. Update results in the digital portal.",
-                        fontSize = 14.sp,
+                        "• Verify the patient's ID band.\n" +
+                                "• Collect blood sample for Malaria RDT.\n" +
+                                "• Update results in the digital portal.",
+                        fontSize = 15.sp,
                         color = if (isDarkMode) Color.LightGray else Color.DarkGray,
-                        lineHeight = 22.sp
+                        lineHeight = 24.sp
                     )
                 }
             }
@@ -152,13 +158,13 @@ fun LabWaitingRoomScreen( // Changed from LabCheckInScreen
                 onClick = onConfirmCheckIn,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = accentTeal)
+                    .height(64.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = accentBlue)
             ) {
                 Text(
-                    "Confirm & Start Lab Processing",
-                    fontWeight = FontWeight.Bold,
+                    "START PROCESSING",
+                    fontWeight = FontWeight.Black,
                     fontSize = 16.sp,
                     color = Color.White
                 )
@@ -173,20 +179,24 @@ fun LabWaitingRoomScreen( // Changed from LabCheckInScreen
 
 @Preview(name = "Light Mode", showBackground = true)
 @Composable
-fun PreviewWaitingRoomLight() { // Renamed for consistency
-    LabWaitingRoomScreen(
-        isDarkMode = false,
-        onBack = {},
-        onConfirmCheckIn = {}
-    )
+fun PreviewWaitingRoomLight() {
+    MyMedifetchProjectTheme(darkTheme = false) {
+        LabWaitingRoomScreen(
+            isDarkMode = false,
+            onBack = {},
+            onConfirmCheckIn = {}
+        )
+    }
 }
 
 @Preview(name = "Dark Mode", showBackground = true)
 @Composable
-fun PreviewWaitingRoomDark() { // Renamed for consistency
-    LabWaitingRoomScreen(
-        isDarkMode = true,
-        onBack = {},
-        onConfirmCheckIn = {}
-    )
+fun PreviewWaitingRoomDark() {
+    MyMedifetchProjectTheme(darkTheme = true) {
+        LabWaitingRoomScreen(
+            isDarkMode = true,
+            onBack = {},
+            onConfirmCheckIn = {}
+        )
+    }
 }

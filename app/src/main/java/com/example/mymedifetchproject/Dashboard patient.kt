@@ -20,23 +20,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.mymedifetchproject.Screen
+import com.example.mymedifetchproject.shared.Screen
 import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardPatientScreen(
     onNavigate: (String) -> Unit,
-    isDarkMode: Boolean // ✅ Removed default value to ensure global sync
+    isDarkMode: Boolean
 ) {
     // --- 1. DYNAMIC THEME PALETTE ---
-    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF5F9FF)
     val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
     val primaryText = if (isDarkMode) Color.White else Color.Black
     val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color.Gray
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+    val accentBlue = if (isDarkMode) Color(0xFF64B5F6) else Color(0xFF0D47A1)
 
-    // Action Alert Colors
     val alertBg = if (isDarkMode) Color(0xFF2D1E00) else Color(0xFFFFF3E0)
     val alertText = if (isDarkMode) Color(0xFFFFB74D) else Color(0xFFE65100)
 
@@ -58,7 +57,7 @@ fun DashboardPatientScreen(
         // --- 3. HEADER ---
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier.size(45.dp).background(accentTeal, CircleShape),
+                modifier = Modifier.size(45.dp).background(accentBlue, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text("DJ", color = Color.White, fontWeight = FontWeight.Bold)
@@ -102,7 +101,8 @@ fun DashboardPatientScreen(
             onClick = { onNavigate(Screen.ReportSickness.route) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = accentTeal)
+            colors = CardDefaults.cardColors(containerColor = accentBlue),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.MedicalInformation, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
@@ -118,12 +118,32 @@ fun DashboardPatientScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // --- 6. STATS ---
+        // --- 6. STATS (FIXED WEIGHT LOGIC) ---
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatCard("Reports", "1", Icons.Filled.Description, cardBg, accentTeal, primaryText, secondaryText, isDarkMode) {
+            StatCard(
+                title = "Reports",
+                count = "1",
+                icon = Icons.Filled.Description,
+                cardBg = cardBg,
+                iconColor = accentBlue,
+                primaryText = primaryText,
+                secondaryText = secondaryText,
+                isDarkMode = isDarkMode,
+                modifier = Modifier.weight(1f) // ✅ Passing weight here
+            ) {
                 onNavigate(Screen.PatientReports.route)
             }
-            StatCard("Labs", "12", Icons.Filled.Science, cardBg, Color(0xFF42A5F5), primaryText, secondaryText, isDarkMode) {
+            StatCard(
+                title = "Labs Visited",
+                count = "12",
+                icon = Icons.Filled.Science,
+                cardBg = cardBg,
+                iconColor = Color(0xFF42A5F5),
+                primaryText = primaryText,
+                secondaryText = secondaryText,
+                isDarkMode = isDarkMode,
+                modifier = Modifier.weight(1f) // ✅ Passing weight here
+            ) {
                 onNavigate(Screen.FindLabs.route)
             }
         }
@@ -139,7 +159,7 @@ fun DashboardPatientScreen(
             progress = currentProgress,
             instructionText = statusInfo.second,
             icon = statusInfo.third,
-            themeColor = accentTeal,
+            themeColor = accentBlue,
             cardBg = cardBg,
             isDarkMode = isDarkMode,
             primaryText = primaryText,
@@ -153,10 +173,21 @@ fun DashboardPatientScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatCard(title: String, count: String, icon: ImageVector, cardBg: Color, iconColor: Color, primaryText: Color, secondaryText: Color, isDarkMode: Boolean, onClick: () -> Unit) {
+fun StatCard(
+    title: String,
+    count: String,
+    icon: ImageVector,
+    cardBg: Color,
+    iconColor: Color,
+    primaryText: Color,
+    secondaryText: Color,
+    isDarkMode: Boolean,
+    modifier: Modifier = Modifier, // ✅ Added modifier parameter
+    onClick: () -> Unit
+) {
     Card(
         onClick = onClick,
-        modifier = Modifier.width(160.dp),
+        modifier = modifier, // ✅ Applied modifier here
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = cardBg),
         border = if (isDarkMode) BorderStroke(1.dp, Color(0xFF222222)) else null
@@ -174,7 +205,18 @@ fun StatCard(title: String, count: String, icon: ImageVector, cardBg: Color, ico
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ActiveCaseTracker(illness: String, status: String, progress: Float, instructionText: String, icon: ImageVector, themeColor: Color, cardBg: Color, isDarkMode: Boolean, primaryText: Color, onTrackClick: () -> Unit) {
+fun ActiveCaseTracker(
+    illness: String,
+    status: String,
+    progress: Float,
+    instructionText: String,
+    icon: ImageVector,
+    themeColor: Color,
+    cardBg: Color,
+    isDarkMode: Boolean,
+    primaryText: Color,
+    onTrackClick: () -> Unit
+) {
     Card(
         onClick = onTrackClick,
         modifier = Modifier.fillMaxWidth(),
@@ -205,8 +247,6 @@ fun ActiveCaseTracker(illness: String, status: String, progress: Float, instruct
         }
     }
 }
-
-// --- PREVIEWS ---
 
 @Preview(name = "Light Mode", showBackground = true)
 @Composable

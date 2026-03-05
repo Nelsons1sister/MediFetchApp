@@ -1,112 +1,157 @@
 package com.example.mymedifetchproject.patient
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.mymedifetchproject.Screen
+import com.example.mymedifetchproject.shared.EditProfileScreen
+import com.example.mymedifetchproject.shared.Screen
 
 @Composable
 fun PatientMainScreen(
     isDarkMode: Boolean,
-    onThemeToggle: (Boolean) -> Unit,
-    onExternalNavigate: (String) -> Unit,
-    currentRoute: String?
+    onLogout: () -> Unit,
+    onThemeToggle: () -> Unit // Added to match your error logs
 ) {
+    // --- 1. NAVIGATION STATE ---
+    var currentRoute by remember { mutableStateOf(Screen.PatientDashboard.route) }
+
+    // --- 2. SHARED DATA STATE ---
+    var selectedLabName by remember { mutableStateOf("") }
+    var selectedLabAddress by remember { mutableStateOf("") }
+    var selectedReportId by remember { mutableStateOf("") }
+
+    // --- 3. UI LOGIC: HIDE BOTTOM BAR ON SUB-SCREENS ---
+    val showBottomBar = currentRoute in listOf(
+        Screen.PatientDashboard.route,
+        Screen.PatientReports.route,
+        Screen.PatientProfile.route
+    )
+
     Scaffold(
         bottomBar = {
-            NavigationBar(
-                containerColor = if (isDarkMode) Color.Black else MaterialTheme.colorScheme.surface,
-                tonalElevation = 8.dp
-            ) {
-                val navItems = listOf(
-                    Triple("Home", Icons.Default.Home, Screen.PatientDashboard.route),
-                    Triple("Labs", Icons.Default.Science, Screen.FindLabs.route),
-                    Triple("Reports", Icons.Default.Assessment, Screen.PatientReports.route),
-                    Triple("Profile", Icons.Default.Person, Screen.PatientProfile.route)
+            if (showBottomBar) {
+                PatientBottomNavBar(
+                    currentRoute = currentRoute,
+                    onTabSelected = { newRoute -> currentRoute = newRoute }
                 )
-
-                navItems.forEach { (label, icon, route) ->
-                    val isSelected = currentRoute == route
-
-                    NavigationBarItem(
-                        selected = isSelected,
-                        onClick = {
-                            if (!isSelected) {
-                                onExternalNavigate(route)
-                            }
-                        },
-                        label = { Text(label) },
-                        icon = { Icon(icon, contentDescription = label) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = if (isDarkMode) Color(0xFF4DB6AC) else MaterialTheme.colorScheme.primary,
-                            indicatorColor = if (isDarkMode) Color(0xFF4DB6AC).copy(alpha = 0.1f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            unselectedIconColor = if (isDarkMode) Color.Gray else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                }
             }
         }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(if (isDarkMode) Color.Black else MaterialTheme.colorScheme.background)
-        ) {
+    ) { paddingValues ->
+        Box(modifier = Modifier.padding(paddingValues)) {
             when (currentRoute) {
+
                 Screen.PatientDashboard.route -> {
                     DashboardPatientScreen(
-                        onNavigate = { route -> onExternalNavigate(route) },
-                        isDarkMode = isDarkMode
+                        isDarkMode = isDarkMode,
+                        onNavigate = { route -> currentRoute = route }
                     )
                 }
+
+                Screen.ReportSickness.route -> {
+                    ReportSicknessScreen(
+                        isDarkMode = isDarkMode,
+                        onBack = { currentRoute = Screen.PatientDashboard.route },
+                        onSubmitted = { currentRoute = Screen.PatientDashboard.route }
+                    )
+                }
+
                 Screen.FindLabs.route -> {
                     PatientFindLabScreen(
-                        onBack = { onExternalNavigate(Screen.PatientDashboard.route) },
-                        onNavigateToCheckIn = { name, addr ->
-                            onExternalNavigate(Screen.LabCheckIn.createRoute(name, addr))
-                        },
-                        isDarkMode = isDarkMode
-                    )
-                }
-                Screen.PatientReports.route -> {
-                    ReportsScreen(
-                        onBack = { onExternalNavigate(Screen.PatientDashboard.route) },
-                        onReportClick = { reportId ->
-                            onExternalNavigate(Screen.PatientReportDetail.createRoute(reportId))
-                        },
-                        isDarkMode = isDarkMode
-                    )
-                }
-                Screen.PatientProfile.route -> {
-                    // ✅ FIXED: Now passing the required onEditProfile lambda
-                    PatientProfileScreen(
                         isDarkMode = isDarkMode,
-                        onThemeToggle = onThemeToggle,
-                        onEditProfile = {
-                            onExternalNavigate(Screen.EditProfile.route)
-                        },
-                        onLogout = {
-                            onExternalNavigate(Screen.Landing.route)
+                        onBack = { currentRoute = Screen.PatientDashboard.route },
+                        onNavigateToCheckIn = { name, address ->
+                            selectedLabName = name
+                            selectedLabAddress = address
+                            currentRoute = "lab_checkin_detail"
                         }
                     )
                 }
-                else -> {
-                    // Default to Dashboard if route is null or unknown
-                    DashboardPatientScreen(
-                        onNavigate = { route -> onExternalNavigate(route) },
-                        isDarkMode = isDarkMode
+
+                "lab_checkin_detail" -> {
+                    LabCheckInScreen(
+                        labName = selectedLabName,
+                        labAddress = selectedLabAddress,
+                        requestedTests = "Malaria (RDT), Typhoid (Widal)",
+                        isDarkMode = isDarkMode,
+                        onConfirm = { currentRoute = Screen.PatientDashboard.route },
+                        onCancel = { currentRoute = Screen.FindLabs.route }
+                    )
+                }
+
+                Screen.PatientReports.route -> {
+                    ReportsScreen(
+                        isDarkMode = isDarkMode,
+                        onBack = { currentRoute = Screen.PatientDashboard.route },
+                        onReportClick = { reportId ->
+                            selectedReportId = reportId
+                            currentRoute = "report_detail_view"
+                        }
+                    )
+                }
+
+                "report_detail_view" -> {
+                    PatientReportDetailScreen(
+                        reportId = selectedReportId,
+                        isDarkMode = isDarkMode,
+                        onBack = { currentRoute = Screen.PatientReports.route }
+                    )
+                }
+
+                Screen.PatientProfile.route -> {
+                    // Update your PatientProfileScreen to accept these 4 params
+                    PatientProfileScreen(
+                        isDarkMode = isDarkMode,
+                        onEditProfile = { currentRoute = Screen.EditProfile.route },
+                        onLogout = onLogout,
+                        onThemeToggle = onThemeToggle
+                    )
+                }
+
+                Screen.EditProfile.route -> {
+                    // Make sure EditProfileScreen does NOT have an 'onSave' param
+                    // if it just uses 'onBack' to return.
+                    EditProfileScreen(
+                        isDarkMode = isDarkMode,
+                        onBack = { currentRoute = Screen.PatientProfile.route }
                     )
                 }
             }
         }
+    }
+}
+
+@Composable
+fun PatientBottomNavBar(
+    currentRoute: String,
+    onTabSelected: (String) -> Unit
+) {
+    NavigationBar(
+        tonalElevation = 8.dp
+    ) {
+        NavigationBarItem(
+            selected = currentRoute == Screen.PatientDashboard.route,
+            onClick = { onTabSelected(Screen.PatientDashboard.route) },
+            label = { Text("Home") },
+            icon = { Icon(Icons.Default.Home, contentDescription = null) }
+        )
+        NavigationBarItem(
+            selected = currentRoute == Screen.PatientReports.route,
+            onClick = { onTabSelected(Screen.PatientReports.route) },
+            label = { Text("Reports") },
+            icon = { Icon(Icons.Default.Assignment, contentDescription = null) }
+        )
+        NavigationBarItem(
+            selected = currentRoute == Screen.PatientProfile.route,
+            onClick = { onTabSelected(Screen.PatientProfile.route) },
+            label = { Text("Profile") },
+            icon = { Icon(Icons.Default.Person, contentDescription = null) }
+        )
     }
 }

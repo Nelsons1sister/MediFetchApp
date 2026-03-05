@@ -32,28 +32,35 @@ data class ProviderPatient(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProviderPatientListScreen(
-    isDarkMode: Boolean, // ✅ Added global state
+    isDarkMode: Boolean,
     onPatientClick: (String) -> Unit
 ) {
     // --- 1. DYNAMIC PALETTE ---
-    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF5F9FF)
     val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
     val primaryText = if (isDarkMode) Color.White else Color.Black
     val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color.Gray
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+    val accentBlue = if (isDarkMode) Color(0xFF64B5F6) else Color(0xFF0D47A1)
 
     var searchQuery by remember { mutableStateOf("") }
 
+    // --- LOGIC EMBEDDED: EXPANDED PATIENT LIST ---
     val allPatients = remember {
         listOf(
             ProviderPatient("David John", "MF-2026-001", "2 hours ago", "Awaiting Lab", true),
             ProviderPatient("Sarah Adams", "MF-2026-042", "5 hours ago", "Result Uploaded", false),
             ProviderPatient("Michael Obi", "MF-2026-089", "Yesterday", "Completed", false),
             ProviderPatient("Blessing Okoro", "MF-2026-112", "3 days ago", "Awaiting Lab", true),
-            ProviderPatient("Emmanuel Tunde", "MF-2026-205", "Just Now", "In Progress", false)
+            ProviderPatient("Emmanuel Tunde", "MF-2026-205", "Just Now", "In Progress", false),
+            ProviderPatient("Kriti Sanjeev", "MF-2026-310", "1 hour ago", "Urgent Review", true),
+            ProviderPatient("Samuel Okon", "MF-2026-415", "4 hours ago", "Awaiting Lab", false),
+            ProviderPatient("Grace Peters", "MF-2026-520", "2 days ago", "Completed", false),
+            ProviderPatient("Isabella Duke", "MF-2026-625", "3 hours ago", "Result Uploaded", false),
+            ProviderPatient("Victor Amechi", "MF-2026-730", "Just Now", "In Progress", true)
         )
     }
 
+    // --- LOGIC EMBEDDED: REAL-TIME SEARCH FILTER ---
     val filteredPatients = allPatients.filter {
         it.name.contains(searchQuery, ignoreCase = true) || it.id.contains(searchQuery, ignoreCase = true)
     }
@@ -76,12 +83,13 @@ fun ProviderPatientListScreen(
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.weight(1f),
                 placeholder = { Text("Search ID or Name", fontSize = 14.sp, color = secondaryText) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = accentTeal) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = accentBlue) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = cardBg,
                     focusedContainerColor = cardBg,
                     unfocusedBorderColor = if (isDarkMode) Color(0xFF222222) else Color.Transparent,
+                    focusedBorderColor = accentBlue,
                     focusedTextColor = primaryText,
                     unfocusedTextColor = primaryText
                 ),
@@ -94,7 +102,7 @@ fun ProviderPatientListScreen(
                     .size(52.dp)
                     .background(cardBg, RoundedCornerShape(12.dp))
             ) {
-                Icon(Icons.Default.FilterList, contentDescription = "Filter", tint = accentTeal)
+                Icon(Icons.Default.FilterList, contentDescription = "Filter", tint = accentBlue)
             }
         }
 
@@ -112,15 +120,19 @@ fun ProviderPatientListScreen(
                     cardBg = cardBg,
                     primaryText = primaryText,
                     secondaryText = secondaryText,
-                    accentTeal = accentTeal,
+                    accentBlue = accentBlue,
                     onClick = onPatientClick
                 )
             }
 
+            // Logic for Empty Search Results
             if (filteredPatients.isEmpty()) {
                 item {
-                    Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No patients found", color = secondaryText)
+                    Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("No patients found", color = secondaryText, fontWeight = FontWeight.Bold)
+                            Text("Try a different name or ID", color = secondaryText, fontSize = 12.sp)
+                        }
                     }
                 }
             }
@@ -136,7 +148,7 @@ fun PatientListItem(
     cardBg: Color,
     primaryText: Color,
     secondaryText: Color,
-    accentTeal: Color,
+    accentBlue: Color,
     onClick: (String) -> Unit
 ) {
     Card(
@@ -155,13 +167,13 @@ fun PatientListItem(
             Box(
                 modifier = Modifier
                     .size(45.dp)
-                    .background(accentTeal.copy(alpha = 0.15f), CircleShape),
+                    .background(accentBlue.copy(alpha = 0.15f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 val initials = patient.name.split(" ").map { it.take(1) }.joinToString("")
                 Text(
                     text = initials,
-                    color = accentTeal,
+                    color = accentBlue,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -179,7 +191,7 @@ fun PatientListItem(
                 }
                 Text(
                     text = patient.status,
-                    color = accentTeal,
+                    color = accentBlue,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -189,16 +201,19 @@ fun PatientListItem(
     }
 }
 
-// --- 3. DUAL PREVIEWS ---
-
+// --- DUAL PREVIEWS ---
 @Preview(name = "Light Mode", showBackground = true)
 @Composable
 fun ProviderPatientListLightPreview() {
-    ProviderPatientListScreen(isDarkMode = false, onPatientClick = {})
+    MyMedifetchProjectTheme(darkTheme = false) {
+        ProviderPatientListScreen(isDarkMode = false, onPatientClick = {})
+    }
 }
 
 @Preview(name = "Dark Mode", showBackground = true)
 @Composable
 fun ProviderPatientListDarkPreview() {
-    ProviderPatientListScreen(isDarkMode = true, onPatientClick = {})
+    MyMedifetchProjectTheme(darkTheme = true) {
+        ProviderPatientListScreen(isDarkMode = true, onPatientClick = {})
+    }
 }

@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mymedifetchproject.data.AuthViewModel
+import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,25 +33,32 @@ fun EditProfileScreen(
 ) {
     val profile by authViewModel.userProfile
 
-    // ✅ remember(profile) ensures the local state updates once the backend data arrives
+    // ✅ State management: Updates when profile data arrives
     var fullName by remember(profile) { mutableStateOf(profile?.full_name ?: "") }
     var phoneNumber by remember(profile) { mutableStateOf(profile?.phone_number ?: "") }
     var isSaving by remember { mutableStateOf(false) }
 
-    // --- DYNAMIC THEME PALETTE ---
-    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    // ✅ NEW LOGIC: Check if the user has actually modified the text
+    val hasChanged = fullName != (profile?.full_name ?: "") || phoneNumber != (profile?.phone_number ?: "")
+
+    // --- EMBEDDED DASHBOARD THEME PALETTE ---
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF5F9FF)
     val primaryText = if (isDarkMode) Color.White else Color.Black
     val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color.Gray
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+    val accentBlue = if (isDarkMode) Color(0xFF64B5F6) else Color(0xFF0D47A1)
+
+    // Logic for button color: Gray if no changes, Blue if changes made
+    val buttonBgColor = if (hasChanged) accentBlue else secondaryText.copy(alpha = 0.4f)
 
     Scaffold(
-        containerColor = bgColor, // ✅ Prevents white flicker in Dark Mode
+        containerColor = bgColor,
         topBar = {
             TopAppBar(
                 title = {
                     Text(
                         text = if (profile?.user_type == "provider") "Edit Facility Profile" else "Edit Profile",
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
                     )
                 },
                 navigationIcon = {
@@ -58,7 +66,7 @@ fun EditProfileScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = accentTeal
+                            tint = accentBlue
                         )
                     }
                 },
@@ -78,7 +86,6 @@ fun EditProfileScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Contextual header text
             Text(
                 text = if (profile?.user_type == "provider")
                     "Update your facility details so patients can reach you easily."
@@ -90,7 +97,7 @@ fun EditProfileScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- NAME FIELD (FACILITY OR PATIENT) ---
+            // --- NAME FIELD ---
             OutlinedTextField(
                 value = fullName,
                 onValueChange = { fullName = it },
@@ -100,18 +107,16 @@ fun EditProfileScreen(
                     Icon(
                         imageVector = if (profile?.user_type == "provider") Icons.Default.Business else Icons.Default.Badge,
                         contentDescription = null,
-                        tint = accentTeal
+                        tint = accentBlue
                     )
                 },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = accentTeal,
+                    focusedBorderColor = accentBlue,
                     unfocusedBorderColor = secondaryText.copy(alpha = 0.5f),
-                    focusedLabelColor = accentTeal,
-                    cursorColor = accentTeal,
+                    focusedLabelColor = accentBlue,
                     focusedTextColor = primaryText,
                     unfocusedTextColor = primaryText,
-                    unfocusedLabelColor = secondaryText
                 )
             )
 
@@ -124,17 +129,15 @@ fun EditProfileScreen(
                 label = { Text("Contact Phone Number") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = {
-                    Icon(Icons.Default.Phone, contentDescription = null, tint = accentTeal)
+                    Icon(Icons.Default.Phone, contentDescription = null, tint = accentBlue)
                 },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = accentTeal,
+                    focusedBorderColor = accentBlue,
                     unfocusedBorderColor = secondaryText.copy(alpha = 0.5f),
-                    focusedLabelColor = accentTeal,
-                    cursorColor = accentTeal,
+                    focusedLabelColor = accentBlue,
                     focusedTextColor = primaryText,
                     unfocusedTextColor = primaryText,
-                    unfocusedLabelColor = secondaryText
                 )
             )
 
@@ -146,15 +149,23 @@ fun EditProfileScreen(
                     isSaving = true
                     authViewModel.saveProfile(fullName, phoneNumber) { success ->
                         isSaving = false
-                        if (success) onBack() // Return to Profile Screen on success
+                        if (success) {
+                            // After saving, we return to the profile screen
+                            onBack()
+                        }
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = accentTeal),
-                enabled = !isSaving && fullName.isNotBlank()
+                // ✅ BUTTON COLOR LOGIC: Gray until modified, then Blue
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = buttonBgColor,
+                    disabledContainerColor = secondaryText.copy(alpha = 0.2f)
+                ),
+                // ✅ BUTTON ENABLED LOGIC: Only enabled if changes exist and name isn't blank
+                enabled = !isSaving && hasChanged && fullName.isNotBlank()
             ) {
                 if (isSaving) {
                     CircularProgressIndicator(
@@ -163,10 +174,10 @@ fun EditProfileScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Icon(Icons.Default.Save, contentDescription = null)
+                    Icon(Icons.Default.Save, contentDescription = null, tint = Color.White)
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        text = "Save Changes",
+                        text = if (hasChanged) "SAVE CHANGES" else "NO CHANGES",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = Color.White
@@ -174,22 +185,5 @@ fun EditProfileScreen(
                 }
             }
         }
-    }
-}
-
-// --- DUAL PREVIEWS ---
-@Preview(name = "Light Mode", showBackground = true, showSystemUi = true)
-@Composable
-fun EditProfileLightPreview() {
-    Surface {
-        EditProfileScreen(isDarkMode = false, onBack = {})
-    }
-}
-
-@Preview(name = "Dark Mode", showBackground = true, showSystemUi = true)
-@Composable
-fun EditProfileDarkPreview() {
-    Surface {
-        EditProfileScreen(isDarkMode = true, onBack = {})
     }
 }

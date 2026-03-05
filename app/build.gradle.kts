@@ -75,6 +75,7 @@ dependencies {
     implementation("io.ktor:ktor-client-android:3.0.1")
     implementation("io.ktor:ktor-client-content-negotiation:3.0.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    implementation(libs.androidx.ui.graphics)
 
     // --- Testing ---
     testImplementation(libs.junit)

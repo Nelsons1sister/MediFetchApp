@@ -13,14 +13,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mymedifetchproject.data.AuthViewModel
-import com.example.mymedifetchproject.patient.InfoRow
 import com.example.mymedifetchproject.patient.SectionCard
+import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 
 @Composable
 fun ProviderProfileScreen(
@@ -34,29 +35,38 @@ fun ProviderProfileScreen(
     val profile by authViewModel.userProfile
     val currentUser = authViewModel.currentUser
 
-    // --- THEME PALETTE ---
-    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF5F9FF)
     val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
     val primaryText = if (isDarkMode) Color.White else Color.Black
     val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color.Gray
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+    val accentBlue = if (isDarkMode) Color(0xFF64B5F6) else Color(0xFF0D47A1)
 
+    // Ensure the profile is fetched whenever this screen is viewed
     LaunchedEffect(Unit) {
         authViewModel.fetchUserProfile()
     }
 
-    // Logout Confirmation Dialog
+    // --- LOGOUT CONFIRMATION DIALOG ---
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Logout Facility", fontWeight = FontWeight.Bold) },
-            text = { Text("Are you sure you want to sign out of the medical practice portal?") },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Logout, contentDescription = null, tint = Color.Red)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Confirm Logout", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = { Text("Are you sure you want to sign out? Access to the medical portal will be restricted until you log back in.") },
             confirmButton = {
-                TextButton(onClick = {
-                    showLogoutDialog = false
-                    authViewModel.logout(onLogout)
-                }) {
-                    Text("Logout", color = Color.Red, fontWeight = FontWeight.Bold)
+                Button(
+                    onClick = {
+                        showLogoutDialog = false
+                        authViewModel.logout(onLogout)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("Yes, Logout", color = Color.White)
                 }
             },
             dismissButton = {
@@ -66,7 +76,8 @@ fun ProviderProfileScreen(
             },
             containerColor = cardBg,
             titleContentColor = primaryText,
-            textContentColor = secondaryText
+            textContentColor = secondaryText,
+            shape = RoundedCornerShape(20.dp)
         )
     }
 
@@ -77,76 +88,93 @@ fun ProviderProfileScreen(
             .padding(horizontal = 20.dp),
         contentPadding = PaddingValues(bottom = 32.dp)
     ) {
-        // --- 1. HEADER ---
+        // --- HEADER SECTION (Avatar & Name) ---
         item {
             Spacer(modifier = Modifier.height(40.dp))
-            Text("Facility Profile", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = primaryText)
-            Text("Medical Practice Administration", color = secondaryText)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Dynamic Icon based on Role
+                val roleIcon = if (profile?.role == "LAB_TECHNICIAN") Icons.Default.Science else Icons.Default.MedicalServices
+
+                Box(
+                    modifier = Modifier
+                        .size(110.dp)
+                        .clip(CircleShape)
+                        .background(accentBlue.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = roleIcon,
+                        contentDescription = null,
+                        modifier = Modifier.size(60.dp),
+                        tint = accentBlue
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = profile?.full_name ?: "Medical Staff",
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = primaryText
+                )
+                val displayRole = profile?.role?.replace("_", " ")?.uppercase() ?: "VERIFYING..."
+                Text(
+                    text = displayRole,
+                    color = accentBlue,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+            }
             Spacer(modifier = Modifier.height(30.dp))
         }
 
-        // --- 2. PROFILE OVERVIEW CARD ---
+        // --- DETAILS SECTION ---
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = cardBg)
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp).fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+            SectionCard("Personal & Facility Details", cardBg, accentBlue) {
+                LocalInfoRow(Icons.Default.Badge, "Role", profile?.role?.replace("_", " ") ?: "---", primaryText, secondaryText)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = secondaryText.copy(alpha = 0.1f))
+
+                // ✅ FIXED LOGIC: Uses 'phone_number' to match AuthViewModel and Repository
+                val displayPhone = profile?.phone_number ?: currentUser?.phoneNumber ?: "Not Set"
+                LocalInfoRow(Icons.Default.Phone, "Phone", displayPhone, primaryText, secondaryText)
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = secondaryText.copy(alpha = 0.1f))
+
+                LocalInfoRow(Icons.Default.LocationOn, "Address", "Facility Branch HQ", primaryText, secondaryText)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = secondaryText.copy(alpha = 0.1f))
+
+                LocalInfoRow(Icons.Default.Fingerprint, "Staff ID", currentUser?.uid?.take(8)?.uppercase() ?: "---", primaryText, secondaryText)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = secondaryText.copy(alpha = 0.1f))
+
+                LocalInfoRow(Icons.Default.VerifiedUser, "Status", "Active & Verified", primaryText, secondaryText)
+            }
+        }
+
+        // --- SETTINGS SECTION ---
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+            SectionCard("Settings", cardBg, accentBlue) {
+                TextButton(
+                    onClick = onEditProfile,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(0.dp)
                 ) {
-                    Box(
-                        modifier = Modifier.size(100.dp).clip(CircleShape).background(accentTeal),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val initial = (profile?.full_name ?: "F").take(1).uppercase()
-                        Text(initial, color = Color.White, fontSize = 36.sp, fontWeight = FontWeight.Bold)
+                        Icon(Icons.Default.Edit, null, tint = accentBlue, modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(16.dp))
+                        Text("Edit Profile Info", color = primaryText, fontWeight = FontWeight.Medium)
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = profile?.full_name ?: "Loading Facility...",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp,
-                        color = primaryText
-                    )
-                    Text(
-                        text = "License: PRV-${currentUser?.uid?.take(6)?.uppercase() ?: "N/A"}",
-                        color = accentTeal,
-                        fontWeight = FontWeight.Medium
-                    )
                 }
-            }
-        }
 
-        // --- 3. CONTACT INFO SECTION ---
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            // ✅ FIXED: Removed 'isDarkMode' to match the SectionCard definition
-            SectionCard("Operational Contact", cardBg, accentTeal) {
-                InfoRow(Icons.Default.Business, "Registered Facility", primaryText, secondaryText)
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 12.dp),
-                    thickness = 0.5.dp,
-                    color = secondaryText.copy(alpha = 0.2f)
-                )
-                InfoRow(Icons.Default.Phone, profile?.phone_number ?: "Add contact number", primaryText, secondaryText)
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 12.dp),
-                    thickness = 0.5.dp,
-                    color = secondaryText.copy(alpha = 0.2f)
-                )
-                InfoRow(Icons.Default.Email, profile?.email ?: "No email linked", primaryText, secondaryText)
-            }
-        }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp, color = secondaryText.copy(alpha = 0.1f))
 
-        // --- 4. THEME SETTINGS SECTION ---
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            // ✅ FIXED: Removed 'isDarkMode' here as well
-            SectionCard("App Settings", cardBg, accentTeal) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -154,58 +182,56 @@ fun ProviderProfileScreen(
                         Icon(
                             imageVector = if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
                             contentDescription = null,
-                            tint = accentTeal,
-                            modifier = Modifier.size(24.dp)
+                            tint = accentBlue,
+                            modifier = Modifier.size(22.dp)
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(Modifier.width(16.dp))
                         Text("Dark Mode", color = primaryText, fontWeight = FontWeight.Medium)
                     }
-
                     Switch(
                         checked = isDarkMode,
                         onCheckedChange = { onThemeToggle(it) },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = accentTeal,
-                            uncheckedThumbColor = Color.Gray,
-                            uncheckedTrackColor = secondaryText.copy(alpha = 0.3f)
-                        )
+                        colors = SwitchDefaults.colors(checkedTrackColor = accentBlue)
                     )
                 }
             }
         }
 
-        // --- 5. ACTION BUTTONS ---
+        // --- LOGOUT BUTTON ---
         item {
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(40.dp))
             Button(
-                onClick = onEditProfile,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = accentTeal)
-            ) {
-                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Update Clinic Profile", color = Color.White, fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            TextButton(
                 onClick = { showLogoutDialog = true },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().height(58.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFEBEE), contentColor = Color.Red)
             ) {
-                Text("Logout Facility", color = Color.Red, fontWeight = FontWeight.Medium)
+                Icon(Icons.Default.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(12.dp))
+                Text("LOGOUT FACILITY", fontWeight = FontWeight.Black, letterSpacing = 1.sp)
             }
         }
     }
 }
 
-// --- PREVIEWS ---
-@Preview(name = "Provider - Light", showSystemUi = true)
 @Composable
-fun PreviewProviderLight() {
-    MaterialTheme {
+fun LocalInfoRow(icon: ImageVector, label: String, value: String, textColor: Color, labelColor: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+        Icon(icon, contentDescription = null, tint = labelColor, modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.width(16.dp))
+        Column {
+            Text(text = label, fontSize = 12.sp, color = labelColor)
+            Text(text = value, fontSize = 15.sp, color = textColor, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+// --- DUAL MODE PREVIEWS ---
+
+@Preview(name = "Light Mode", showBackground = true)
+@Composable
+fun ProviderProfileLightPreview() {
+    MyMedifetchProjectTheme(darkTheme = false) {
         ProviderProfileScreen(
             isDarkMode = false,
             onThemeToggle = {},
@@ -215,17 +241,15 @@ fun PreviewProviderLight() {
     }
 }
 
-@Preview(name = "Provider - Dark", showSystemUi = true)
+@Preview(name = "Dark Mode", showSystemUi = true)
 @Composable
-fun PreviewProviderDark() {
-    MaterialTheme {
-        Surface(color = Color.Black) {
-            ProviderProfileScreen(
-                isDarkMode = true,
-                onThemeToggle = {},
-                onEditProfile = {},
-                onLogout = {}
-            )
-        }
+fun ProviderProfileDarkPreview() {
+    MyMedifetchProjectTheme(darkTheme = true) {
+        ProviderProfileScreen(
+            isDarkMode = true,
+            onThemeToggle = {},
+            onEditProfile = {},
+            onLogout = {}
+        )
     }
 }

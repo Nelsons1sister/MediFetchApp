@@ -24,18 +24,18 @@ import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 @Composable
 fun ProviderPatientDetailScreen(
     patientId: String = "MF-2026-001",
-    isDarkMode: Boolean,              // ✅ Added global state
+    isDarkMode: Boolean,
     onBack: () -> Unit,
     onOrderLab: () -> Unit
 ) {
     var showSuccessDialog by remember { mutableStateOf(false) }
 
-    // --- 1. DYNAMIC PALETTE ---
-    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    // --- 1. DYNAMIC PALETTE (SYCHRONIZED WITH DASHBOARD) ---
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF5F9FF) // Match Dashboard Blue-White
     val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
     val primaryText = if (isDarkMode) Color.White else Color.Black
     val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color.Gray
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+    val accentBlue = if (isDarkMode) Color(0xFF64B5F6) else Color(0xFF0D47A1) // Match Dashboard Blue
 
     // --- 2. SUCCESS DIALOG ---
     if (showSuccessDialog) {
@@ -45,7 +45,7 @@ fun ProviderPatientDetailScreen(
                 Icon(
                     Icons.Default.CheckCircle,
                     contentDescription = null,
-                    tint = accentTeal,
+                    tint = accentBlue,
                     modifier = Modifier.size(40.dp)
                 )
             },
@@ -58,7 +58,7 @@ fun ProviderPatientDetailScreen(
                     showSuccessDialog = false
                     onOrderLab()
                 }) {
-                    Text("OK", color = accentTeal, fontWeight = FontWeight.Bold)
+                    Text("OK", color = accentBlue, fontWeight = FontWeight.Bold)
                 }
             },
             shape = RoundedCornerShape(16.dp),
@@ -107,13 +107,13 @@ fun ProviderPatientDetailScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
                             shape = CircleShape,
-                            color = accentTeal.copy(alpha = 0.15f),
+                            color = accentBlue.copy(alpha = 0.15f),
                             modifier = Modifier.size(50.dp)
                         ) {
                             Icon(
                                 Icons.Default.Person,
                                 contentDescription = null,
-                                tint = accentTeal,
+                                tint = accentBlue,
                                 modifier = Modifier.padding(10.dp)
                             )
                         }
@@ -142,7 +142,7 @@ fun ProviderPatientDetailScreen(
             Spacer(modifier = Modifier.height(25.dp))
 
             // --- 4. SYMPTOMS SECTION ---
-            Text("Patient's Statement", fontWeight = FontWeight.Bold, color = accentTeal)
+            Text("Patient's Statement", fontWeight = FontWeight.Bold, color = accentBlue)
             Spacer(modifier = Modifier.height(10.dp))
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -164,11 +164,12 @@ fun ProviderPatientDetailScreen(
             Text("Provider Actions", fontWeight = FontWeight.Bold, color = secondaryText)
             Spacer(modifier = Modifier.height(15.dp))
 
+            // Changed Button from Green/Teal to Dashboard Blue
             Button(
                 onClick = { showSuccessDialog = true },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = accentTeal)
+                colors = ButtonDefaults.buttonColors(containerColor = accentBlue)
             ) {
                 Icon(Icons.Default.Science, contentDescription = null, tint = Color.White)
                 Spacer(modifier = Modifier.width(10.dp))
@@ -197,11 +198,15 @@ fun ProviderPatientDetailScreen(
 @Preview(name = "Light Mode", showBackground = true)
 @Composable
 fun ProviderDetailLightPreview() {
-    ProviderPatientDetailScreen(isDarkMode = false, onBack = {}, onOrderLab = {})
+    MyMedifetchProjectTheme(darkTheme = false) {
+        ProviderPatientDetailScreen(isDarkMode = false, onBack = {}, onOrderLab = {})
+    }
 }
 
 @Preview(name = "Dark Mode", showBackground = true)
 @Composable
 fun ProviderDetailDarkPreview() {
-    ProviderPatientDetailScreen(isDarkMode = true, onBack = {}, onOrderLab = {})
+    MyMedifetchProjectTheme(darkTheme = true) {
+        ProviderPatientDetailScreen(isDarkMode = true, onBack = {}, onOrderLab = {})
+    }
 }

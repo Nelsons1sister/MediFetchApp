@@ -2,28 +2,30 @@ package com.example.mymedifetchproject.provider
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.mymedifetchproject.Screen
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.mymedifetchproject.data.AuthViewModel
+import com.example.mymedifetchproject.shared.Screen
+import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 
-// --- ENUMS ---
+// --- 0. ENUMS ---
 enum class ProviderTab(val label: String, val icon: ImageVector) {
     Home("Home", Icons.Filled.Dashboard),
     Patients("Patients", Icons.Filled.People),
@@ -31,161 +33,112 @@ enum class ProviderTab(val label: String, val icon: ImageVector) {
     Profile("Profile", Icons.Filled.Person)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+// --- 1. MAIN DASHBOARD SCREEN ---
 @Composable
 fun DashboardServiceProviderScreen(
+    authViewModel: AuthViewModel = viewModel(),
     isDarkMode: Boolean,
     onThemeToggle: (Boolean) -> Unit,
     onNavigate: (String) -> Unit = {},
-    // ✅ ADDED: Parameters to fix NavGraph errors
-    onEditProfile: () -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
+    // ✅ PERMANENT FIX: Fetch profile on launch
+    LaunchedEffect(Unit) {
+        authViewModel.fetchUserProfile()
+    }
+
+    // ✅ PERMANENT FIX: Observe real-time profile state
+    val profile by authViewModel.userProfile
+    val currentUser = authViewModel.currentUser
+
+    // Navigation and UI States
     var selectedTab by remember { mutableStateOf(ProviderTab.Home) }
     var showLabInbox by remember { mutableStateOf(false) }
 
-    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
-    val navBarColor = if (isDarkMode) Color.Black else Color.White
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
-    val primaryText = if (isDarkMode) Color.White else Color.Black
+    // Theme Colors
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF5F9FF)
+    val navBarColor = if (isDarkMode) Color(0xFF1A1A1A) else Color.White
+    val accentBlue = if (isDarkMode) Color(0xFF64B5F6) else Color(0xFF0D47A1)
 
     Scaffold(
         bottomBar = {
-            NavigationBar(
-                containerColor = navBarColor,
-                tonalElevation = 8.dp
-            ) {
-                ProviderTab.entries.forEach { tab ->
-                    val isSelected = !showLabInbox && selectedTab == tab
-                    NavigationBarItem(
-                        selected = isSelected,
-                        onClick = {
-                            selectedTab = tab
-                            showLabInbox = false
-                        },
-                        label = { Text(tab.label, fontSize = 10.sp) },
-                        icon = { Icon(tab.icon, contentDescription = tab.label) },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = accentTeal,
-                            selectedTextColor = accentTeal,
-                            indicatorColor = accentTeal.copy(alpha = 0.1f),
-                            unselectedIconColor = if (isDarkMode) Color.Gray else Color.DarkGray
+            if (!showLabInbox) {
+                NavigationBar(containerColor = navBarColor, tonalElevation = 8.dp) {
+                    ProviderTab.entries.forEach { tab ->
+                        NavigationBarItem(
+                            selected = selectedTab == tab,
+                            onClick = { selectedTab = tab },
+                            label = { Text(tab.label, fontSize = 10.sp) },
+                            icon = { Icon(imageVector = tab.icon, contentDescription = tab.label) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = accentBlue,
+                                indicatorColor = accentBlue.copy(alpha = 0.1f)
+                            )
                         )
-                    )
+                    }
                 }
             }
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
                 .background(bgColor)
         ) {
-            when {
-                showLabInbox -> {
-                    ProviderLabResultsContent(
-                        isDarkMode = isDarkMode,
-                        accentTeal = accentTeal,
-                        onBack = { showLabInbox = false },
-                        onWritePrescription = {
-                            showLabInbox = false
-                            selectedTab = ProviderTab.Prescription
-                        }
-                    )
-                }
-
-                selectedTab == ProviderTab.Home -> {
-                    ProviderHomeContent(
-                        isDarkMode = isDarkMode,
-                        accentTeal = accentTeal,
-                        onViewReportsClick = { showLabInbox = true },
-                        onWaitingRoomClick = { onNavigate(Screen.LabWaitingRoom.route) }
-                    )
-                }
-
-                selectedTab == ProviderTab.Patients -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Patient List Screen", color = primaryText)
-                    }
-                }
-
-                selectedTab == ProviderTab.Prescription -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Prescription Screen", color = primaryText)
-                    }
-                }
-
-                selectedTab == ProviderTab.Profile -> {
-                    // ✅ FIXED: Passing callbacks down to ProviderProfileScreen
-                    ProviderProfileScreen(
-                        isDarkMode = isDarkMode,
-                        onThemeToggle = onThemeToggle,
-                        onEditProfile = onEditProfile,
-                        onLogout = onLogout
-                    )
-                }
+            // ✅ PERMANENT FIX: Shared Header with dynamic Database Data
+            if (!showLabInbox && selectedTab != ProviderTab.Profile) {
+                SharedProviderHeader(
+                    name = profile?.full_name ?: "Medical Staff",
+                    role = profile?.role ?: "Verifying...",
+                    id = currentUser?.uid?.take(8)?.uppercase() ?: "---",
+                    isDarkMode = isDarkMode,
+                    accentBlue = accentBlue
+                )
             }
-        }
-    }
-}
 
-// --- SUB-COMPOSABLES ---
-
-@Composable
-fun ProviderLabResultsContent(
-    isDarkMode: Boolean,
-    accentTeal: Color,
-    onBack: () -> Unit,
-    onWritePrescription: () -> Unit
-) {
-    val primaryText = if (isDarkMode) Color.White else Color.Black
-    val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = accentTeal)
-            }
-            Text("Lab Results Inbox", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = primaryText)
-        }
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(bottom = 20.dp)
-        ) {
-            items(5) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = cardBg),
-                    elevation = CardDefaults.cardElevation(2.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Description, contentDescription = null, tint = accentTeal)
-                            Spacer(Modifier.width(12.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text("David John", fontWeight = FontWeight.Bold, color = primaryText)
-                                Text("Malaria RDT: Positive (++)", color = accentTeal, fontSize = 12.sp)
+            Box(modifier = Modifier.fillMaxSize()) {
+                when {
+                    showLabInbox -> {
+                        ProviderLabReportsScreen(
+                            isDarkMode = isDarkMode,
+                            onBack = { showLabInbox = false },
+                            onAction = { _ ->
+                                selectedTab = ProviderTab.Prescription
+                                showLabInbox = false
                             }
-                            Text("Today", color = Color.Gray, fontSize = 11.sp)
+                        )
+                    }
+
+                    selectedTab == ProviderTab.Home -> {
+                        ProviderHomeContent(
+                            isDarkMode = isDarkMode,
+                            accentBlue = accentBlue,
+                            onViewReportsClick = { showLabInbox = true },
+                            onQuickPrescribe = { selectedTab = ProviderTab.Prescription }
+                        )
+                    }
+
+                    selectedTab == ProviderTab.Patients -> {
+                        ProviderPatientListContent(accentBlue) { id ->
+                            onNavigate(Screen.PatientDetail.createRoute(id))
                         }
-                        Spacer(Modifier.height(16.dp))
-                        Button(
-                            onClick = onWritePrescription,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = accentTeal),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Write Prescription", fontWeight = FontWeight.Bold)
+                    }
+
+                    selectedTab == ProviderTab.Prescription -> {
+                        ProviderPrescriptionForm(accentBlue) {
+                            selectedTab = ProviderTab.Home
                         }
+                    }
+
+                    selectedTab == ProviderTab.Profile -> {
+                        ProviderProfileScreen(
+                            authViewModel = authViewModel,
+                            isDarkMode = isDarkMode,
+                            onThemeToggle = onThemeToggle,
+                            onEditProfile = { onNavigate(Screen.EditProfile.route) },
+                            onLogout = onLogout
+                        )
                     }
                 }
             }
@@ -193,130 +146,131 @@ fun ProviderLabResultsContent(
     }
 }
 
-@Composable
-fun ProviderHomeContent(
-    isDarkMode: Boolean,
-    accentTeal: Color,
-    onViewReportsClick: () -> Unit,
-    onWaitingRoomClick: () -> Unit
-) {
-    val primaryText = if (isDarkMode) Color.White else Color.Black
-    val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color.Gray
+// --- 2. SUPPORTING COMPONENTS ---
 
-    Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier.size(50.dp).background(accentTeal, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("RD", color = Color.White, fontWeight = FontWeight.Bold)
+@Composable
+fun SharedProviderHeader(name: String, role: String, id: String, isDarkMode: Boolean, accentBlue: Color) {
+    val cardBg = if (isDarkMode) Color(0xFF1A1A1A) else Color.White
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(cardBg),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(modifier = Modifier.size(48.dp), shape = CircleShape, color = accentBlue.copy(alpha = 0.1f)) {
+                val icon = if (role.contains("LAB", ignoreCase = true)) Icons.Default.Science else Icons.Default.MedicalServices
+                Icon(icon, null, tint = accentBlue, modifier = Modifier.padding(8.dp))
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Riverside Diagnostics", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = primaryText)
-                Text("Medical Provider ID: MF-PRO-99", color = secondaryText, fontSize = 12.sp)
-            }
-            IconButton(onClick = {}) {
-                Icon(Icons.Default.Notifications, contentDescription = null, tint = accentTeal)
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(name, fontWeight = FontWeight.Bold, color = if(isDarkMode) Color.White else Color.Black)
+                Text("${role.replace("_", " ").uppercase()} • STAFF ID: $id", fontSize = 11.sp, color = Color.Gray)
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(32.dp))
-        Text("Facility Overview", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = primaryText)
-        Spacer(modifier = Modifier.height(24.dp))
+@Composable
+private fun ProviderHomeContent(
+    isDarkMode: Boolean,
+    accentBlue: Color,
+    onViewReportsClick: () -> Unit,
+    onQuickPrescribe: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+        Text("Facility Overview", fontSize = 24.sp, fontWeight = FontWeight.Black, color = accentBlue)
+        Spacer(Modifier.height(16.dp))
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxWidth()
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item { ProviderStatCard("Total Patients", "1,240", Icons.Default.Groups, accentTeal, isDarkMode) }
-            item { ProviderStatCard("Pending Review", "8", Icons.Default.MedicalInformation, Color(0xFFFFA000), isDarkMode) }
-            item { ProviderStatCard("Completed Labs", "42", Icons.Default.CheckCircle, Color(0xFF43A047), isDarkMode) }
-            item { ProviderStatCard("Active Orders", "14", Icons.Default.Science, Color(0xFF1E88E5), isDarkMode) }
+            item { ProviderStatCard("Total Patients", "1,240", Icons.Default.Groups, accentBlue, isDarkMode) }
+            item { ProviderStatCard("Pending Reports", "8", Icons.Default.Science, Color(0xFFFFA000), isDarkMode) }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
-        Text("Active Operations", fontWeight = FontWeight.Bold, color = secondaryText, fontSize = 14.sp)
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.weight(1f))
+
+        Button(
+            onClick = onQuickPrescribe,
+            modifier = Modifier.fillMaxWidth().height(60.dp),
+            colors = ButtonDefaults.buttonColors(accentBlue)
+        ) {
+            Text("NEW PRESCRIPTION", fontWeight = FontWeight.Black)
+        }
+
+        Spacer(Modifier.height(12.dp))
 
         OutlinedButton(
-            onClick = onWaitingRoomClick,
-            modifier = Modifier.fillMaxWidth().height(60.dp),
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.5.dp, accentTeal)
-        ) {
-            Icon(Icons.Default.HourglassEmpty, contentDescription = null, tint = accentTeal)
-            Spacer(modifier = Modifier.width(12.dp))
-            Text("Enter Waiting Room", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = primaryText)
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-        Button(
             onClick = onViewReportsClick,
             modifier = Modifier.fillMaxWidth().height(60.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = accentTeal)
+            border = BorderStroke(2.dp, accentBlue)
         ) {
-            Icon(Icons.Default.History, contentDescription = null, tint = Color.White)
-            Spacer(modifier = Modifier.width(12.dp))
-            Text("Review All Lab Results", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color.White)
+            Text("REVIEW LAB RESULTS", color = accentBlue, fontWeight = FontWeight.Black)
         }
+        Spacer(Modifier.height(20.dp))
     }
 }
 
 @Composable
 fun ProviderStatCard(title: String, count: String, icon: ImageVector, accentColor: Color, isDarkMode: Boolean) {
-    val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
-    val primaryText = if (isDarkMode) Color.White else Color.Black
-
     Card(
+        modifier = Modifier.height(100.dp),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = cardBg),
-        elevation = CardDefaults.cardElevation(if (isDarkMode) 0.dp else 2.dp),
-        border = if (isDarkMode) BorderStroke(1.dp, Color(0xFF222222)) else null
+        colors = CardDefaults.cardColors(if (isDarkMode) Color(0xFF1E1E1E) else Color.White)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Box(
-                modifier = Modifier.size(40.dp).background(accentColor.copy(alpha = 0.15f), RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(icon, contentDescription = null, tint = accentColor)
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(text = title, color = if (isDarkMode) Color.LightGray else Color.Gray, fontSize = 12.sp)
-            Text(text = count, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = primaryText)
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.Center) {
+            Icon(icon, null, tint = accentColor, modifier = Modifier.size(20.dp))
+            Text(title, fontSize = 12.sp, color = Color.Gray)
+            Text(count, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = if (isDarkMode) Color.White else Color.Black)
         }
     }
 }
 
-// --- DUAL PREVIEWS ---
+@Composable
+private fun ProviderPatientListContent(accentBlue: Color, onPatientClick: (String) -> Unit) {
+    Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
+        Text("Patient Directory", fontSize = 24.sp, fontWeight = FontWeight.Black, color = accentBlue)
+        Card(modifier = Modifier.fillMaxWidth().padding(top = 12.dp).clickable { onPatientClick("1") }) {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.AccountCircle, null, tint = accentBlue)
+                Spacer(Modifier.width(12.dp))
+                Text("John Doe (ID: MF-001)", fontWeight = FontWeight.Medium)
+            }
+        }
+    }
+}
 
-@Preview(name = "Dashboard - Light Mode", showBackground = true, showSystemUi = true)
+@Composable
+private fun ProviderPrescriptionForm(accentBlue: Color, onSent: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
+        Text("New Prescription", fontSize = 24.sp, fontWeight = FontWeight.Black, color = accentBlue)
+        Spacer(Modifier.height(16.dp))
+        OutlinedTextField(value = "", onValueChange = {}, label = { Text("Medication") }, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(value = "", onValueChange = {}, label = { Text("Dosage") }, modifier = Modifier.fillMaxWidth())
+        Button(onClick = onSent, modifier = Modifier.fillMaxWidth().padding(top = 20.dp), colors = ButtonDefaults.buttonColors(accentBlue)) {
+            Text("SEND TO PATIENT")
+        }
+    }
+}
+
+// --- 3. DUAL THEME PREVIEWS ---
+
+@Preview(name = "Light Mode Dashboard", showBackground = true, showSystemUi = true)
 @Composable
 fun ProviderDashboardLightPreview() {
-    MaterialTheme {
-        DashboardServiceProviderScreen(
-            isDarkMode = false,
-            onThemeToggle = {},
-            onEditProfile = {},
-            onLogout = {}
-        )
+    MyMedifetchProjectTheme(darkTheme = false) {
+        DashboardServiceProviderScreen(isDarkMode = false, onThemeToggle = {})
     }
 }
 
-@Preview(name = "Dashboard - Dark Mode", showBackground = true, showSystemUi = true)
+@Preview(name = "Dark Mode Dashboard", showBackground = true, showSystemUi = true)
 @Composable
 fun ProviderDashboardDarkPreview() {
-    MaterialTheme {
-        Surface(color = Color.Black) {
-            DashboardServiceProviderScreen(
-                isDarkMode = true,
-                onThemeToggle = {},
-                onEditProfile = {},
-                onLogout = {}
-            )
-        }
+    MyMedifetchProjectTheme(darkTheme = true) {
+        DashboardServiceProviderScreen(isDarkMode = true, onThemeToggle = {})
     }
 }

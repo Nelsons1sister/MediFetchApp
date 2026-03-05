@@ -1,4 +1,4 @@
-package com.example.mymedifetchproject
+package com.example.mymedifetchproject.shared
 
 sealed class Screen(val route: String) {
     // 🚪 AUTH / ENTRANCE
@@ -14,11 +14,15 @@ sealed class Screen(val route: String) {
         fun createRoute(role: String) = "create_account/$role"
     }
 
+    object ForgotPassword : Screen("forgot_password")
+
     // 🏥 PATIENT ECOSYSTEM
     object PatientDashboard : Screen("patient_dashboard")
     object FindLabs : Screen("find_labs")
     object PatientReports : Screen("patient_reports")
     object PatientProfile : Screen("patient_profile")
+
+    // ✅ Updated to match the navigation call in PatientMainScreen
     object ReportSickness : Screen("report_sickness")
 
     object LabCheckIn : Screen("lab_checkin/{name}/{address}") {
@@ -31,7 +35,6 @@ sealed class Screen(val route: String) {
 
     // 🩺 PROVIDER ECOSYSTEM
     object ProviderDashboard : Screen("provider_dashboard")
-    object LabWaitingRoom : Screen("lab_waiting_room")
     object ProviderLabInbox : Screen("lab_reports_inbox")
 
     object ProviderPrescription : Screen("provider_prescription/{patientId}") {
@@ -42,11 +45,11 @@ sealed class Screen(val route: String) {
         fun createRoute(patientId: String) = "patient_detail/$patientId"
     }
 
-    // 🛠️ SHARED / PROFILE SYSTEM
-    // ✅ ADDED: This fixes the "Unresolved reference 'EditProfile'" error in NavGraph
-    object EditProfile : Screen("edit_profile")
+    // 🔬 LAB TECH ECOSYSTEM
+    object LabTechDashboard : Screen("labtech_dashboard")
+    object LabWaitingRoom : Screen("lab_waiting_room")
 
-    // Legacy/Unused
-    object ForgotPasswordPatient : Screen("forgot_password_patient")
-    object ForgotPasswordProvider : Screen("forgot_password_provider")
+    // 🛠️ SHARED / PROFILE SYSTEM
+    // ✅ This matches the call we added to the Patient Profile screen
+    object EditProfile : Screen("edit_profile")
 }

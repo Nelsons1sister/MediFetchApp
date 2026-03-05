@@ -18,27 +18,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PatientReportDetailScreen(
     reportId: String,
     onBack: () -> Unit,
-    isDarkMode: Boolean // ✅ Forced sync: Removed default value
+    isDarkMode: Boolean
 ) {
     // --- 1. DYNAMIC THEME PALETTE ---
-    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF5F9FF)
     val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
     val primaryText = if (isDarkMode) Color.White else Color.Black
     val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color.Gray
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+    val accentBlue = if (isDarkMode) Color(0xFF64B5F6) else Color(0xFF0D47A1)
 
     // Status Colors (Alert for Positive Result)
     val alertBg = if (isDarkMode) Color(0xFF310B0B) else Color(0xFFFFEBEE)
     val alertText = if (isDarkMode) Color(0xFFFF8A80) else Color(0xFFC62828)
 
     // Prescription Box Colors
-    val prescrBg = if (isDarkMode) Color(0xFF00201E) else Color(0xFFE0F2F1)
+    val prescrBg = if (isDarkMode) Color(0xFF0D1B2A) else Color(0xFFE3F2FD)
 
     // Mock data
     val diagnosis = "Plasmodium Falciparum (++)"
@@ -65,8 +66,8 @@ fun PatientReportDetailScreen(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = bgColor,
                     titleContentColor = primaryText,
-                    navigationIconContentColor = accentTeal,
-                    actionIconContentColor = accentTeal
+                    navigationIconContentColor = accentBlue,
+                    actionIconContentColor = accentBlue
                 )
             )
         }
@@ -126,7 +127,7 @@ fun PatientReportDetailScreen(
                         text = diagnosis,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = accentTeal,
+                        color = accentBlue,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
@@ -144,7 +145,7 @@ fun PatientReportDetailScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Medication, contentDescription = null, tint = accentTeal)
+                        Icon(Icons.Default.Medication, contentDescription = null, tint = accentBlue)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(doctorName, fontWeight = FontWeight.Bold, color = if (isDarkMode) Color.White else Color.Black)
                     }
@@ -159,7 +160,7 @@ fun PatientReportDetailScreen(
                     Text(
                         text = "Note: Complete the full dosage even if symptoms disappear.",
                         fontSize = 11.sp,
-                        color = accentTeal,
+                        color = accentBlue,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -173,7 +174,7 @@ fun PatientReportDetailScreen(
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isDarkMode) Color(0xFF222222) else Color.Black
+                    containerColor = accentBlue
                 )
             ) {
                 Text("Return to Reports", color = Color.White, fontWeight = FontWeight.Bold)
@@ -199,11 +200,15 @@ fun DetailRow(label: String, value: String, primaryText: Color, secondaryText: C
 @Preview(name = "Light Mode Detail", showBackground = true, showSystemUi = true)
 @Composable
 fun ReportDetailPreviewLight() {
-    PatientReportDetailScreen(reportId = "MF-2026-001", onBack = {}, isDarkMode = false)
+    MyMedifetchProjectTheme(darkTheme = false) {
+        PatientReportDetailScreen(reportId = "MF-2026-001", onBack = {}, isDarkMode = false)
+    }
 }
 
 @Preview(name = "Dark Mode Detail", showBackground = true, showSystemUi = true)
 @Composable
 fun ReportDetailPreviewDark() {
-    PatientReportDetailScreen(reportId = "MF-2026-001", onBack = {}, isDarkMode = true)
+    MyMedifetchProjectTheme(darkTheme = true) {
+        PatientReportDetailScreen(reportId = "MF-2026-001", onBack = {}, isDarkMode = true)
+    }
 }

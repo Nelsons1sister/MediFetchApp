@@ -35,15 +35,18 @@ data class LabFacility(
 fun PatientFindLabScreen(
     onBack: () -> Unit,
     onNavigateToCheckIn: (String, String) -> Unit,
-    isDarkMode: Boolean // Force sync by removing default value
+    isDarkMode: Boolean
 ) {
     // --- 2. DYNAMIC THEME PALETTE ---
-    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    // ✅ UPDATED: Matching the soft-blue experience (0xFFF5F9FF)
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF5F9FF)
     val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
     val primaryText = if (isDarkMode) Color.White else Color.Black
     val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color.Gray
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
-    val orderCardBg = if (isDarkMode) Color(0xFF002B28) else Color(0xFFE0EDED)
+
+    // ✅ UPDATED: Matching the branding Blue-Teal (Deep Blue)
+    val accentBlue = if (isDarkMode) Color(0xFF64B5F6) else Color(0xFF0D47A1)
+    val orderCardBg = if (isDarkMode) Color(0xFF0D1B2A) else Color(0xFFE3F2FD)
 
     var searchQuery by remember { mutableStateOf("") }
 
@@ -79,7 +82,7 @@ fun PatientFindLabScreen(
                 onClick = onBack,
                 modifier = Modifier.background(cardBg, RoundedCornerShape(12.dp))
             ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = accentTeal)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = accentBlue)
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
@@ -98,9 +101,9 @@ fun PatientFindLabScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Info, contentDescription = null, tint = accentTeal, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Info, contentDescription = null, tint = accentBlue, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("ACTIVE TEST ORDER", fontWeight = FontWeight.ExtraBold, fontSize = 11.sp, color = accentTeal)
+                    Text("ACTIVE TEST ORDER", fontWeight = FontWeight.ExtraBold, fontSize = 11.sp, color = accentBlue)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Tests: ${requestedTests.joinToString(", ")}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = primaryText)
@@ -124,8 +127,8 @@ fun PatientFindLabScreen(
                 focusedContainerColor = cardBg,
                 unfocusedTextColor = primaryText,
                 focusedTextColor = primaryText,
-                cursorColor = accentTeal,
-                focusedBorderColor = accentTeal,
+                cursorColor = accentBlue,
+                focusedBorderColor = accentBlue,
                 unfocusedBorderColor = if (isDarkMode) Color(0xFF333333) else Color.LightGray
             )
         )
@@ -145,8 +148,7 @@ fun PatientFindLabScreen(
                     cardBg = cardBg,
                     primaryText = primaryText,
                     secondaryText = secondaryText,
-                    accentTeal = accentTeal,
-                    // Navigates to the LabCheckInScreen via the NavGraph logic
+                    accentBlue = accentBlue,
                     onCheckIn = { onNavigateToCheckIn(lab.name, lab.address) }
                 )
             }
@@ -161,7 +163,7 @@ fun LabItemCard(
     cardBg: Color,
     primaryText: Color,
     secondaryText: Color,
-    accentTeal: Color,
+    accentBlue: Color,
     onCheckIn: () -> Unit
 ) {
     Card(
@@ -175,17 +177,17 @@ fun LabItemCard(
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .background(accentTeal.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
+                        .background(accentBlue.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Science, contentDescription = null, tint = accentTeal)
+                    Icon(Icons.Default.Science, contentDescription = null, tint = accentBlue)
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(lab.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = primaryText)
                     Text("${lab.address} (${lab.region})", color = secondaryText, fontSize = 12.sp)
                 }
-                Text(lab.distance, color = accentTeal, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text(lab.distance, color = accentBlue, fontWeight = FontWeight.Bold, fontSize = 13.sp)
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -195,7 +197,7 @@ fun LabItemCard(
                 Spacer(modifier = Modifier.weight(1f))
                 Button(
                     onClick = onCheckIn,
-                    colors = ButtonDefaults.buttonColors(containerColor = accentTeal),
+                    colors = ButtonDefaults.buttonColors(containerColor = accentBlue),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.height(36.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
@@ -208,7 +210,6 @@ fun LabItemCard(
 }
 
 // --- 8. PREVIEWS ---
-
 @Preview(name = "Light Mode", showBackground = true, showSystemUi = true)
 @Composable
 fun PreviewFindLabLight() {

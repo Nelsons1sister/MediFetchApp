@@ -20,9 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 
 // --- 1. DATA MODEL ---
-data class MedicalReport(
+data class PatientReport(
     val id: String,
     val title: String,
     val date: String,
@@ -35,20 +36,21 @@ data class MedicalReport(
 fun ReportsScreen(
     onBack: () -> Unit,
     onReportClick: (String) -> Unit,
-    isDarkMode: Boolean // ✅ Forced sync: Removed default value
+    isDarkMode: Boolean
 ) {
     // --- DYNAMIC THEME PALETTE ---
-    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    // ✅ Updated to match the soft blue background and deep blue branding
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF5F9FF)
     val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
     val primaryText = if (isDarkMode) Color.White else Color.Black
     val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color.Gray
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
+    val accentBlue = if (isDarkMode) Color(0xFF64B5F6) else Color(0xFF0D47A1)
 
     // 🩺 MOCK DATA
     val reportsList = listOf(
-        MedicalReport("REP001", "Malaria & Typhoid Result", "Feb 18, 2026", "City Diagnostics"),
-        MedicalReport("REP002", "Full Blood Count", "Jan 12, 2026", "Savannah Health Lab"),
-        MedicalReport("REP003", "Urinalysis", "Dec 05, 2025", "St. Mary's Pathology")
+        PatientReport("REP001", "Malaria & Typhoid Result", "Feb 18, 2026", "City Diagnostics"),
+        PatientReport("REP002", "Full Blood Count", "Jan 12, 2026", "Savannah Health Lab"),
+        PatientReport("REP003", "Urinalysis", "Dec 05, 2025", "St. Mary's Pathology")
     )
 
     Column(
@@ -68,7 +70,7 @@ fun ReportsScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = accentTeal
+                    tint = accentBlue
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
@@ -112,7 +114,7 @@ fun ReportsScreen(
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 100.dp) // Added padding for bottom navigation bar
+            contentPadding = PaddingValues(bottom = 100.dp)
         ) {
             items(reportsList) { report ->
                 ReportItemCard(
@@ -121,7 +123,7 @@ fun ReportsScreen(
                     cardBg = cardBg,
                     primaryText = primaryText,
                     secondaryText = secondaryText,
-                    accentTeal = accentTeal,
+                    accentBlue = accentBlue,
                     onClick = { onReportClick(report.id) }
                 )
             }
@@ -132,12 +134,12 @@ fun ReportsScreen(
 // --- 3. SUB-COMPONENT ---
 @Composable
 fun ReportItemCard(
-    report: MedicalReport,
+    report: PatientReport,
     isDarkMode: Boolean,
     cardBg: Color,
     primaryText: Color,
     secondaryText: Color,
-    accentTeal: Color,
+    accentBlue: Color,
     onClick: () -> Unit
 ) {
     Card(
@@ -154,16 +156,17 @@ fun ReportItemCard(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Icon Container
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .background(accentTeal.copy(alpha = 0.1f), RoundedCornerShape(10.dp)),
+                    .background(accentBlue.copy(alpha = 0.1f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Assignment,
                     contentDescription = null,
-                    tint = accentTeal
+                    tint = accentBlue
                 )
             }
 
@@ -183,9 +186,10 @@ fun ReportItemCard(
                 )
             }
 
+            // Download Button
             IconButton(
-                onClick = { /* PDF Download Logic */ },
-                colors = IconButtonDefaults.iconButtonColors(contentColor = accentTeal)
+                onClick = { /* Logic for downloading PDF */ },
+                colors = IconButtonDefaults.iconButtonColors(contentColor = accentBlue)
             ) {
                 Icon(
                     imageVector = Icons.Default.Download,
@@ -198,15 +202,18 @@ fun ReportItemCard(
 }
 
 // --- 4. PREVIEWS ---
-
 @Preview(name = "Light Mode", showBackground = true, showSystemUi = true)
 @Composable
 fun ReportsPreviewLight() {
-    ReportsScreen(onBack = {}, onReportClick = {}, isDarkMode = false)
+    MyMedifetchProjectTheme(darkTheme = false) {
+        ReportsScreen(onBack = {}, onReportClick = {}, isDarkMode = false)
+    }
 }
 
 @Preview(name = "Dark Mode", showBackground = true, showSystemUi = true)
 @Composable
 fun ReportsPreviewDark() {
-    ReportsScreen(onBack = {}, onReportClick = {}, isDarkMode = true)
+    MyMedifetchProjectTheme(darkTheme = true) {
+        ReportsScreen(onBack = {}, onReportClick = {}, isDarkMode = true)
+    }
 }

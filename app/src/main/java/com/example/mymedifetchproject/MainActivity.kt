@@ -21,6 +21,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.mymedifetchproject.data.AuthViewModel
+import com.example.mymedifetchproject.shared.Screen
 import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 
 class MainActivity : ComponentActivity() {

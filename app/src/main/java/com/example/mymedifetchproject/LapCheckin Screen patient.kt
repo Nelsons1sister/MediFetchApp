@@ -26,30 +26,33 @@ fun LabCheckInScreen(
     labName: String,
     labAddress: String,
     requestedTests: String,
-    onConfirm: () -> Unit, // This will be triggered after the Success Dialog
+    onConfirm: () -> Unit,
     onCancel: () -> Unit,
-    isDarkMode: Boolean // Removed default value to force global sync
+    isDarkMode: Boolean
 ) {
     // --- 1. SUCCESS DIALOG STATE ---
     var showSuccessDialog by remember { mutableStateOf(false) }
 
     // --- 2. DYNAMIC THEME PALETTE ---
-    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    // ✅ UPDATED: Consistent soft-blue background
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF5F9FF)
     val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
     val primaryText = if (isDarkMode) Color.White else Color(0xFF1B1B1B)
     val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color.Gray
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
-    val iconSurface = if (isDarkMode) Color(0xFF002B28) else Color(0xFFE0F2F1)
+
+    // ✅ UPDATED: Deep Blue branding color (0xFF0D47A1)
+    val accentBlue = if (isDarkMode) Color(0xFF64B5F6) else Color(0xFF0D47A1)
+    val iconSurface = if (isDarkMode) Color(0xFF0D1B2A) else Color(0xFFE3F2FD)
 
     // --- 3. SUCCESS DIALOG LOGIC ---
     if (showSuccessDialog) {
         AlertDialog(
-            onDismissRequest = { /* Prevent dismiss on outside click */ },
+            onDismissRequest = { },
             icon = {
                 Icon(
                     Icons.Default.CheckCircle,
                     contentDescription = null,
-                    tint = accentTeal,
+                    tint = accentBlue,
                     modifier = Modifier.size(48.dp)
                 )
             },
@@ -70,9 +73,9 @@ fun LabCheckInScreen(
                 Button(
                     onClick = {
                         showSuccessDialog = false
-                        onConfirm() // Triggers the navigation back to Dashboard
+                        onConfirm()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = accentTeal),
+                    colors = ButtonDefaults.buttonColors(containerColor = accentBlue),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Done", fontWeight = FontWeight.Bold)
@@ -97,7 +100,7 @@ fun LabCheckInScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = bgColor,
                     titleContentColor = primaryText,
-                    navigationIconContentColor = accentTeal
+                    navigationIconContentColor = accentBlue
                 )
             )
         }
@@ -123,7 +126,7 @@ fun LabCheckInScreen(
                         Icons.Default.LocationOn,
                         contentDescription = null,
                         modifier = Modifier.size(44.dp),
-                        tint = accentTeal
+                        tint = accentBlue
                     )
                 }
             }
@@ -163,7 +166,7 @@ fun LabCheckInScreen(
                         text = labName,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 20.sp,
-                        color = accentTeal,
+                        color = accentBlue,
                         textAlign = TextAlign.Center
                     )
                     Text(
@@ -184,7 +187,7 @@ fun LabCheckInScreen(
                         Icon(
                             Icons.Default.Verified,
                             contentDescription = null,
-                            tint = accentTeal,
+                            tint = accentBlue,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -210,11 +213,11 @@ fun LabCheckInScreen(
 
             // --- 6. ACTION BUTTONS ---
             Button(
-                onClick = { showSuccessDialog = true }, // ✅ Triggers dialog instead of immediate nav
+                onClick = { showSuccessDialog = true },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(58.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = accentTeal),
+                colors = ButtonDefaults.buttonColors(containerColor = accentBlue),
                 shape = RoundedCornerShape(16.dp),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
@@ -247,8 +250,8 @@ fun LabCheckInScreen(
 fun LabCheckInPreviewLight() {
     LabCheckInScreen(
         labName = "North Gate Diagnostics",
-        labAddress = "123 Medical Lane, Lagos",
-        requestedTests = "Malaria RDT, Full Blood Count",
+        labAddress = "12 Airport Road, North Region",
+        requestedTests = "Malaria (RDT), Typhoid (Widal)",
         onConfirm = {},
         onCancel = {},
         isDarkMode = false
@@ -260,8 +263,8 @@ fun LabCheckInPreviewLight() {
 fun LabCheckInPreviewDark() {
     LabCheckInScreen(
         labName = "North Gate Diagnostics",
-        labAddress = "123 Medical Lane, Lagos",
-        requestedTests = "Malaria RDT, Full Blood Count",
+        labAddress = "12 Airport Road, North Region",
+        requestedTests = "Malaria (RDT), Typhoid (Widal)",
         onConfirm = {},
         onCancel = {},
         isDarkMode = true

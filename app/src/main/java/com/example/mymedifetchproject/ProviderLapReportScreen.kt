@@ -8,9 +8,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Medication
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,7 +20,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.mymedifetchproject.ui.theme.MyMedifetchProjectTheme
 
+// --- 0. GLOBAL DATA MODEL ---
+// IMPORTANT: Delete any other 'data class LabReportItem' in DashboardServiceProvider.kt
+// to avoid "Duplicate Class" errors.
 data class LabReportItem(
     val patientId: String,
     val patientName: String,
@@ -31,17 +35,18 @@ data class LabReportItem(
 
 @Composable
 fun ProviderLabReportsScreen(
-    isDarkMode: Boolean, // Added for theme support
+    isDarkMode: Boolean,
     onBack: () -> Unit,
-    onNavigateToPrescribe: (String) -> Unit
+    onAction: (String) -> Unit // Renamed to 'onAction' to sync with Dashboard
 ) {
-    // --- Dynamic Theme Palette ---
-    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF8FBFB)
+    // --- Dashboard Synced Palette ---
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF5F9FF)
     val primaryText = if (isDarkMode) Color.White else Color.Black
     val secondaryText = if (isDarkMode) Color.Gray else Color.DarkGray
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
-    val cardBg = if (isDarkMode) Color(0xFF121212) else Color.White
+    val accentBlue = if (isDarkMode) Color(0xFF64B5F6) else Color(0xFF0D47A1)
+    val cardBg = if (isDarkMode) Color(0xFF1A1A1A) else Color.White
 
+    // Mock data for the Provider's Inbox
     val completedReports = listOf(
         LabReportItem("P-001", "David John", "Malaria RDT", "Parasite Detected: ++", "Today, 11:30 AM"),
         LabReportItem("P-045", "Sarah Adams", "Full Blood Count", "Normal Range", "Yesterday"),
@@ -52,63 +57,63 @@ fun ProviderLabReportsScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(bgColor)
-            .padding(top = 40.dp)
+            .padding(top = 16.dp)
             .padding(horizontal = 20.dp)
     ) {
-        // --- Header ---
+        // --- HEADER ---
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack, modifier = Modifier.size(32.dp)) {
+            IconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = accentTeal,
-                    modifier = Modifier.size(24.dp)
+                    tint = accentBlue
                 )
             }
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = "Lab Results Inbox",
                 fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Black,
                 color = primaryText
             )
         }
 
-        // --- Recently Completed Tests Label ---
+        // --- SECTION LABEL ---
         Row(
-            modifier = Modifier.padding(top = 20.dp, bottom = 12.dp),
+            modifier = Modifier.padding(top = 24.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 Icons.Default.History,
                 contentDescription = null,
-                tint = accentTeal,
+                tint = accentBlue,
                 modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Recently Completed Tests",
+                text = "RECENTLY COMPLETED",
                 color = secondaryText,
-                fontWeight = FontWeight.Medium,
-                fontSize = 14.sp
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                letterSpacing = 1.sp
             )
         }
 
-        // --- The List ---
+        // --- RESULTS LIST ---
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 24.dp)
         ) {
             items(completedReports) { report ->
-                ReportCard(
+                InternalReportCard(
                     report = report,
                     isDarkMode = isDarkMode,
-                    accentTeal = accentTeal,
+                    accentBlue = accentBlue,
                     cardBg = cardBg,
-                    onAction = onNavigateToPrescribe
+                    onAction = onAction
                 )
             }
         }
@@ -116,46 +121,52 @@ fun ProviderLabReportsScreen(
 }
 
 @Composable
-fun ReportCard(
+private fun InternalReportCard(
     report: LabReportItem,
     isDarkMode: Boolean,
-    accentTeal: Color,
+    accentBlue: Color,
     cardBg: Color,
     onAction: (String) -> Unit
 ) {
     val primaryText = if (isDarkMode) Color.White else Color.Black
-    val dividerColor = if (isDarkMode) Color(0xFF222222) else Color(0xFFEEEEEE)
+    val dividerColor = if (isDarkMode) Color.Gray.copy(alpha = 0.2f) else Color(0xFFEEEEEE)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = cardBg),
-        elevation = CardDefaults.cardElevation(if (isDarkMode) 0.dp else 2.dp)
+        elevation = CardDefaults.cardElevation(if (isDarkMode) 0.dp else 4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            // Patient Info Row
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     shape = CircleShape,
-                    color = accentTeal.copy(alpha = 0.1f),
-                    modifier = Modifier.size(36.dp)
+                    color = accentBlue.copy(alpha = 0.1f),
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            Icons.Default.Assignment,
+                            Icons.Default.Science,
                             contentDescription = null,
-                            tint = accentTeal,
-                            modifier = Modifier.size(18.dp)
+                            tint = accentBlue,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(report.patientName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = primaryText)
                     Text(
-                        report.testName,
-                        color = accentTeal,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
+                        text = report.patientName,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 16.sp,
+                        color = primaryText
+                    )
+                    Text(
+                        text = report.testName,
+                        color = accentBlue,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
                 Text(report.date, color = Color.Gray, fontSize = 11.sp)
@@ -167,39 +178,57 @@ fun ReportCard(
                 color = dividerColor
             )
 
-            Text("Lab Findings:", fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = Color.Gray)
+            // Findings
             Text(
-                report.resultSummary,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = primaryText,
-                modifier = Modifier.padding(bottom = 12.dp)
+                text = "Lab Findings:",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
+            Text(
+                text = report.resultSummary,
+                fontWeight = FontWeight.Black,
+                fontSize = 15.sp,
+                color = primaryText
             )
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Write Prescription Button
             Button(
                 onClick = { onAction(report.patientId) },
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = accentTeal),
-                shape = RoundedCornerShape(10.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = accentBlue),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(Icons.Default.Medication, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Medication, null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Write Prescription", fontWeight = FontWeight.Bold)
+                Text(
+                    text = "WRITE PRESCRIPTION",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 14.sp
+                )
             }
         }
     }
 }
 
-// --- PREVIEWS ---
+// --- DUAL PREVIEWS ---
 
 @Preview(name = "Light Mode", showBackground = true, showSystemUi = true)
 @Composable
 fun PreviewProviderLabReportsLight() {
-    ProviderLabReportsScreen(isDarkMode = false, onBack = {}, onNavigateToPrescribe = {})
+    MyMedifetchProjectTheme(darkTheme = false) {
+        ProviderLabReportsScreen(isDarkMode = false, onBack = {}, onAction = {})
+    }
 }
 
 @Preview(name = "Dark Mode", showBackground = true, showSystemUi = true)
 @Composable
 fun PreviewProviderLabReportsDark() {
-    ProviderLabReportsScreen(isDarkMode = true, onBack = {}, onNavigateToPrescribe = {})
+    MyMedifetchProjectTheme(darkTheme = true) {
+        ProviderLabReportsScreen(isDarkMode = true, onBack = {}, onAction = {})
+    }
 }

@@ -26,14 +26,18 @@ import kotlinx.coroutines.launch
 fun ReportSicknessScreen(
     onBack: () -> Unit,
     onSubmitted: () -> Unit,
-    isDarkMode: Boolean = isSystemInDarkTheme()
+    isDarkMode: Boolean
 ) {
     // --- 1. THEME PALETTE ---
-    val bgColor = if (isDarkMode) Color.Black else Color.White
+    // ✅ UPDATED: Matching the exact blue-teal background from Landing/Login
+    val bgColor = if (isDarkMode) Color.Black else Color(0xFFF5F9FF)
     val primaryText = if (isDarkMode) Color.White else Color.Black
     val secondaryText = if (isDarkMode) Color(0xFFB0B0B0) else Color(0xFF424242)
-    val accentTeal = if (isDarkMode) Color(0xFF4DB6AC) else Color(0xFF2C7B76)
-    val fieldBg = if (isDarkMode) Color(0xFF1A1A1A) else Color(0xFFF9F9F9)
+
+    // ✅ UPDATED: Matching the Primary Blue-Teal from the Login button
+    val accentBlue = if (isDarkMode) Color(0xFF64B5F6) else Color(0xFF0D47A1)
+
+    val fieldBg = if (isDarkMode) Color(0xFF1A1A1A) else Color.White
     val dialogBg = if (isDarkMode) Color(0xFF1E1E1E) else Color.White
 
     // --- 2. STATE MANAGEMENT ---
@@ -51,7 +55,7 @@ fun ReportSicknessScreen(
                 Icon(
                     Icons.Default.CheckCircle,
                     contentDescription = null,
-                    tint = accentTeal,
+                    tint = accentBlue,
                     modifier = Modifier.size(64.dp)
                 )
             },
@@ -76,9 +80,9 @@ fun ReportSicknessScreen(
                 Button(
                     onClick = {
                         showSuccessDialog = false
-                        onSubmitted() // Navigation happens here
+                        onSubmitted() // Navigation back to dashboard
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = accentTeal),
+                    colors = ButtonDefaults.buttonColors(containerColor = accentBlue),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp)
                 ) {
@@ -100,7 +104,7 @@ fun ReportSicknessScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = bgColor,
                     titleContentColor = primaryText,
-                    navigationIconContentColor = accentTeal
+                    navigationIconContentColor = accentBlue
                 )
             )
         }
@@ -142,7 +146,7 @@ fun ReportSicknessScreen(
                 },
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = accentTeal,
+                    focusedBorderColor = accentBlue,
                     unfocusedBorderColor = if (isDarkMode) Color(0xFF333333) else Color.LightGray,
                     unfocusedContainerColor = fieldBg,
                     focusedContainerColor = fieldBg,
@@ -154,6 +158,7 @@ fun ReportSicknessScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             // --- SEND BUTTON ---
+            // ✅ UPDATED: Color set to our primary accentBlue
             Button(
                 onClick = {
                     if (symptomText.isNotEmpty()) {
@@ -161,7 +166,7 @@ fun ReportSicknessScreen(
                         scope.launch {
                             delay(2000) // Simulating network send
                             isSending = false
-                            showSuccessDialog = true // Trigger the dialog
+                            showSuccessDialog = true
                         }
                     }
                 },
@@ -171,8 +176,8 @@ fun ReportSicknessScreen(
                 enabled = symptomText.isNotEmpty() && !isSending,
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = accentTeal,
-                    disabledContainerColor = accentTeal.copy(alpha = 0.4f)
+                    containerColor = accentBlue,
+                    disabledContainerColor = accentBlue.copy(alpha = 0.4f)
                 )
             ) {
                 if (isSending) {
